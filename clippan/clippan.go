@@ -9,12 +9,14 @@ import (
 	_ "github.com/go-kivik/couchdb/v4"
 	"github.com/go-kivik/kivik/v4"
 	"github.com/mattn/go-shellwords"
+	"github.com/tidwall/pretty"
 )
 
 type Printer interface {
 	Error(string, ...interface{})
 	Debug(string, ...interface{})
 	Print(string, ...interface{})
+	JSON([]byte)
 }
 type TextPrinter struct{}
 
@@ -28,6 +30,13 @@ func (p *TextPrinter) Debug(format string, args ...interface{}) {
 
 func (p *TextPrinter) Print(format string, args ...interface{}) {
 	fmt.Printf(format+"\n", args...)
+}
+
+func (p *TextPrinter) JSON(raw []byte) {
+	data := pretty.Pretty(raw)
+	// can be optional if we want color / more control over formatting
+	data = pretty.Color(data, nil)
+	fmt.Println(string(data))
 }
 
 type Clippan struct {
@@ -73,6 +82,10 @@ func (c *Clippan) Debug(format string, args ...interface{}) {
 
 func (c *Clippan) Print(format string, args ...interface{}) {
 	c.Printer.Print(format, args...)
+}
+
+func (c *Clippan) JSON(raw []byte) {
+	c.Printer.JSON(raw)
 }
 
 func (c *Clippan) Connect() error {

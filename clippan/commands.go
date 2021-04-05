@@ -10,7 +10,6 @@ import (
 	"github.com/c-bata/go-prompt"
 	"github.com/go-kivik/kivik/v4"
 	"github.com/iivvoo/clippan/bench"
-	"github.com/tidwall/pretty"
 )
 
 type Flag uint8
@@ -163,10 +162,7 @@ func Get(c *Clippan, args []string) error {
 	if err != nil {
 		return err
 	}
-	data = pretty.Pretty(data)
-	// can be optional if we want color / more control over formatting
-	data = pretty.Color(data, nil)
-	fmt.Println(string(data))
+	c.JSON(data)
 	return nil
 }
 
