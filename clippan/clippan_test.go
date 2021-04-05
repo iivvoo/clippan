@@ -12,6 +12,7 @@ type TestPrinter struct {
 	Errors []string // possibly preserve format and args separately
 	Debugs []string
 	Prints []string
+	JSONS  [][]byte
 }
 
 func (t *TestPrinter) Error(format string, args ...interface{}) {
@@ -22,6 +23,9 @@ func (t *TestPrinter) Debug(format string, args ...interface{}) {
 }
 func (t *TestPrinter) Print(format string, args ...interface{}) {
 	t.Prints = append(t.Prints, fmt.Sprintf(format+"\n", args...))
+}
+func (t *TestPrinter) JSON(raw []byte) {
+	t.JSONS = append(t.JSONS, raw)
 }
 
 func NewTestClippan(testdb *bench.CouchDB, enableWrite bool, printer Printer) *Clippan {
