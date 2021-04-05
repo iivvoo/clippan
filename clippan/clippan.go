@@ -11,10 +11,30 @@ import (
 	"github.com/mattn/go-shellwords"
 )
 
+type Printer interface {
+	Error(string, ...interface{})
+	Debug(string, ...interface{})
+	Print(string, ...interface{})
+}
+type TextPrinter struct{}
+
+func (p *TextPrinter) Error(format string, args ...interface{}) {
+	fmt.Printf("ERROR: "+format+"\n", args...)
+}
+
+func (p *TextPrinter) Debug(format string, args ...interface{}) {
+	fmt.Printf("DEBUG: "+format+"\n", args...)
+}
+
+func (p *TextPrinter) Print(format string, args ...interface{}) {
+	fmt.Printf(format+"\n", args...)
+}
+
 type Clippan struct {
 	dsn      string
 	client   *kivik.Client
 	database *kivik.DB
+	Printer  Printer
 	//
 	enableWrite bool
 	host        string
@@ -39,7 +59,20 @@ func NewClippan(dsn string, enableWrite bool) *Clippan {
 		enableWrite: enableWrite,
 		host:        u.Host,
 		prompt:      p,
+		Printer:     &TextPrinter{},
 	}
+}
+
+func (c *Clippan) Error(format string, args ...interface{}) {
+	c.Printer.Error(format, args...)
+}
+
+func (c *Clippan) Debug(format string, args ...interface{}) {
+	c.Printer.Debug(format, args...)
+}
+
+func (c *Clippan) Print(format string, args ...interface{}) {
+	c.Printer.Print(format, args...)
 }
 
 func (c *Clippan) Connect() error {
@@ -57,41 +90,42 @@ func (c *Clippan) Connect() error {
 func (c *Clippan) Executer(s string) {
 	parsed, err := shellwords.Parse(s)
 	if err != nil {
-		fmt.Println("ERROR: " + err.Error())
+		c.Error(err.Error())
 		return
 	}
 	if len(parsed) == 0 {
 		return
 	}
-	fmt.Printf("DEBUG: Command: %#v\n", parsed)
+	c.Debug("Command: %#v", parsed)
 	cmd := parsed[0]
 
 	found := false
 	for _, ce := range Commands {
 		if ce.cmd == cmd {
 			if ce.writeOp && !c.enableWrite {
-				fmt.Println("ERROR: Write operation in ro mode. Restart with `-write`")
+				c.Error("Write operation in ro mode. Restart with `-write`")
 			} else if ce.flags&NeedConnection == NeedConnection && c.client == nil {
-				fmt.Println("ERROR: Not connected")
+				c.Error("Not connected")
 			} else if ce.flags&NeedDatabase == NeedDatabase && c.database == nil {
-				fmt.Println("ERROR: No database selected")
+				c.Error("No database selected")
 			} else if err := ce.handler(c, parsed); err != nil {
-				fmt.Println("ERROR: " + err.Error())
+				c.Error(err.Error())
 			}
 			found = true
 		}
 	}
 	if !found {
-		fmt.Println("ERROR: command not found. Use 'help'")
+		c.Error("command not found. Use 'help'")
 	}
 }
 
-func (c *Clippan) UseDB(db string) {
+func (c *Clippan) UseDB(db string) bool {
 	if exists, err := c.client.DBExists(context.TODO(), db); err != nil {
-		fmt.Println("ERROR: " + err.Error())
-		return
+		c.Error(err.Error())
+		return false
 	} else if !exists {
-		fmt.Println("ERROR: " + db + " does not exist")
+		c.Error(db + " does not exist")
+		return false
 	}
 
 	if c.database != nil {
@@ -105,7 +139,7 @@ func (c *Clippan) UseDB(db string) {
 		mode = "(rw)"
 	}
 	c.prompt.SetPrompt(c.host + "/" + c.db + mode)
-
+	return true
 }
 
 // Run starts clippan, connecting to the provided dsn (may be empty, may contain database)
@@ -115,10 +149,10 @@ func (c *Clippan) Run() {
 	if c.db != "" {
 		fullDSN += "/" + c.db
 	}
-	fmt.Println("Connecting to " + fullDSN)
+	c.Print("Connecting to " + fullDSN)
 
 	if err := c.Connect(); err != nil {
-		fmt.Println("ERROR: " + err.Error())
+		c.Error(err.Error())
 	} else if c.db != "" {
 		c.UseDB(c.db)
 	} else {

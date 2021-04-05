@@ -138,6 +138,14 @@ type CouchDB struct {
 	revmut sync.RWMutex
 }
 
+func (c *CouchDB) DB() *kivik.DB {
+	return c.db
+}
+
+func (c *CouchDB) Client() *kivik.Client {
+	return c.client
+}
+
 func NewCouchDB(dsn string) (*CouchDB, error) {
 	u, err := url.Parse(dsn)
 	if err != nil {
