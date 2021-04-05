@@ -24,6 +24,7 @@ const (
 type Command struct {
 	cmd     string
 	help    string
+	writeOp bool
 	flags   Flag
 	handler func(*Clippan, []string) error
 }
@@ -38,14 +39,14 @@ var Commands []*Command
 
 func init() {
 	Commands = []*Command{
-		{"databases", "List all databases", NeedConnection, Databases},
-		{"use", "Connect to a database", NeedConnection, UseDB},
-		{"createdb", "Create a database", NeedConnection, CreateDB},
-		{"deletedb", "Delete a database", NeedConnection, DeleteDB},
-		{"all", "List all docs, paginated", NeedDatabase, AllDocs},
-		{"get", "Get a single document by id", NeedDatabase, Get},
-		{"exit", "Exit clippan", None, Exit},
-		{"help", "Show help", None, Help},
+		{"databases", "List all databases", false, NeedConnection, Databases},
+		{"use", "Connect to a database", false, NeedConnection, UseDB},
+		{"createdb", "Create a database", true, NeedConnection, CreateDB},
+		{"deletedb", "Delete a database", true, NeedConnection, DeleteDB},
+		{"all", "List all docs, paginated", false, NeedDatabase, AllDocs},
+		{"get", "Get a single document by id", false, NeedDatabase, Get},
+		{"exit", "Exit clippan", false, None, Exit},
+		{"help", "Show help", false, None, Help},
 	}
 }
 
@@ -102,7 +103,14 @@ func DeleteDB(c *Clippan, args []string) error {
 
 func Help(c *Clippan, args []string) error {
 	for _, ce := range Commands {
-		fmt.Printf("%s  %s\n", ce.cmd, ce.help)
+		writeHelp := ""
+		if ce.writeOp {
+			writeHelp = "(w)"
+			if !c.enableWrite {
+				writeHelp = "(disabled, ro mode)"
+			}
+		}
+		fmt.Printf("%-20s  %s %s\n", ce.cmd, ce.help, writeHelp)
 	}
 	return nil
 }

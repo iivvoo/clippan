@@ -69,7 +69,9 @@ func (c *Clippan) Executer(s string) {
 	found := false
 	for _, ce := range Commands {
 		if ce.cmd == cmd {
-			if ce.flags&NeedConnection == NeedConnection && c.client == nil {
+			if ce.writeOp && !c.enableWrite {
+				fmt.Println("ERROR: Write operation in ro mode. Restart with `-write`")
+			} else if ce.flags&NeedConnection == NeedConnection && c.client == nil {
 				fmt.Println("ERROR: Not connected")
 			} else if ce.flags&NeedDatabase == NeedDatabase && c.database == nil {
 				fmt.Println("ERROR: No database selected")
