@@ -29,7 +29,12 @@ func NormalizeDSN(base string) (*url.URL, error) {
 
 func main() {
 	flags := flag.NewFlagSet(os.Args[0], flag.ExitOnError)
-	flags.Parse(os.Args[1:])
+	writeEnabled := false
+
+	flags.BoolVar(&writeEnabled, "write", false, "Allow write operations")
+	if err := flags.Parse(os.Args[1:]); err != nil {
+		panic(err)
+	}
 	dsn := flags.Arg(0)
 	if dsn == "" {
 		dsn = "http://admin:a-secret@localhost:5984"
@@ -38,6 +43,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	c := clippan.NewClippan(dsnNormalized.String())
+
+	c := clippan.NewClippan(dsnNormalized.String(), writeEnabled)
 	c.Run()
 }

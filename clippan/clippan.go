@@ -16,12 +16,13 @@ type Clippan struct {
 	client   *kivik.Client
 	database *kivik.DB
 	//
-	host   string
-	db     string // database.Name() ??
-	prompt *Prompt
+	enableWrite bool
+	host        string
+	db          string // database.Name() ??
+	prompt      *Prompt
 }
 
-func NewClippan(dsn string) *Clippan {
+func NewClippan(dsn string, enableWrite bool) *Clippan {
 	u, err := url.Parse(dsn)
 	if err != nil {
 		panic(err)
@@ -31,8 +32,14 @@ func NewClippan(dsn string) *Clippan {
 	dsn = u.String()
 
 	p := NewPrompt()
-	return &Clippan{dsn: dsn, db: database, client: nil, host: u.Host,
-		prompt: p}
+	return &Clippan{
+		dsn:         dsn,
+		db:          database,
+		client:      nil,
+		enableWrite: enableWrite,
+		host:        u.Host,
+		prompt:      p,
+	}
 }
 
 func (c *Clippan) Connect() error {
@@ -91,7 +98,11 @@ func (c *Clippan) UseDB(db string) {
 
 	c.db = db
 	c.database = c.client.DB(context.TODO(), db)
-	c.prompt.SetPrompt(c.host + "/" + c.db)
+	mode := "(ro)"
+	if c.enableWrite {
+		mode = "(rw)"
+	}
+	c.prompt.SetPrompt(c.host + "/" + c.db + mode)
 
 }
 
