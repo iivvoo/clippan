@@ -79,36 +79,26 @@ func DeleteDB(c *Clippan, args []string) error {
 	fs.BoolVar(&force, "f", false, "Force operation")
 	fs.Parse(args[1:])
 
-	// We can get multiple args, and some might be wildcards.
-	// Expand them to a full list. What if some don't match?
-	// `rm` will just delete whatever possible and complain about the rest
-
-	pattern := fs.Arg(0)
+	// Producing a list of existing databases (and a list of non-matching patterns) is something that can probably be reused
 	dbs, err := c.client.AllDBs(context.TODO())
 	if err != nil {
 		return err
 	}
 	toDelete := make([]string, 0)
 
-	g := glob.MustCompile(pattern)
-	matches := 0
-	for _, db := range dbs {
-		if g.Match(db) {
-			toDelete = append(toDelete, db)
-			matches += 1
-		} else {
-			// c.Print("Does not exist " + db)
+	for _, pattern := range fs.Args() {
+		g := glob.MustCompile(pattern)
+		matches := 0
+		for _, db := range dbs {
+			if g.Match(db) {
+				toDelete = append(toDelete, db)
+				matches += 1
+			}
+		}
+		if matches == 0 {
+			c.Error("%s does not match any database", pattern)
 		}
 	}
-	if matches == 0 {
-		c.Error("%s does not match any database", pattern)
-	}
-
-	// if exists, err := c.client.DBExists(context.TODO(), db); err != nil {
-	// 	return err
-	// } else if !exists {
-	// 	return DatabaseDoesNotExist
-	// }
 
 	for _, db := range toDelete {
 		if !force {
@@ -146,6 +136,7 @@ func Help(c *Clippan, args []string) error {
 		}
 		c.Print("%-20s  %s %s", ce.cmd, ce.help, writeHelp)
 	}
+	c.Print("\nUse <cmd> -h to get additional options for that command")
 	return nil
 }
 
