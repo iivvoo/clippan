@@ -17,6 +17,8 @@ github.com/go-kivik/kivik/v4 v4.0.0-20200214160900-846fe547c809/go.mod h1:yZnDIa
 github.com/go-kivik/kivik/v4 v4.0.0-20200710132642-db78c23bfa09 h1:YvdzNJkg/5P8oQgNU8SZ8saiiNHPdW7hrWVg5ju33HY=
 github.com/go-kivik/kivik/v4 v4.0.0-20200710132642-db78c23bfa09/go.mod h1:O2fxy5xMXO7vaVr2gQG38sYTj/mHwg5Md/8kP7qUZQk=
 github.com/go-kivik/kiviktest/v4 v4.0.0-20200427193832-9610c732f701/go.mod h1:wistIXKheHZ3Ejr81OqUDuHKiFK4nSg0kobDgp1N4us=
+github.com/gobwas/glob v0.2.3 h1:A4xDbljILXROh+kObIiy5kIaPYD8e96x1tgBhUI5J+Y=
+github.com/gobwas/glob v0.2.3/go.mod h1:d3Ez4x06l9bZtSvzIay5+Yzi0fmZzPgnTbPcKjJAkT8=
 github.com/gopherjs/gopherjs v0.0.0-20180825215210-0210a2f0f73c/go.mod h1:wJfORRmW1u3UXTncJ5qlYoELFm8eSnnEO6hX4iZ3EWY=
 github.com/gopherjs/gopherjs v0.0.0-20200209144316-f9cef593def5/go.mod h1:wJfORRmW1u3UXTncJ5qlYoELFm8eSnnEO6hX4iZ3EWY=
 github.com/konsorten/go-windows-terminal-sequences v1.0.3/go.mod h1:T0+1ngSBFLxvqU3pZ+m/2kptfBszLMUkC4ZK/EgS/cQ=

@@ -4,11 +4,12 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
+	"flag"
 	"os"
 
 	"github.com/c-bata/go-prompt"
 	"github.com/go-kivik/kivik/v4"
+	"github.com/gobwas/glob"
 	"github.com/iivvoo/clippan/bench"
 )
 
@@ -69,34 +70,68 @@ func CreateDB(c *Clippan, args []string) error {
 
 func DeleteDB(c *Clippan, args []string) error {
 	// Make sure we disconnect from db if we'e currently connected to it
-	if len(args) != 2 {
+	force := false
+
+	if len(args) < 2 {
 		return UsageError
 	}
-	db := args[1]
-	if exists, err := c.client.DBExists(context.TODO(), db); err != nil {
+	fs := flag.NewFlagSet(args[0], flag.ContinueOnError)
+	fs.BoolVar(&force, "f", false, "Force operation")
+	fs.Parse(args[1:])
+
+	// We can get multiple args, and some might be wildcards.
+	// Expand them to a full list. What if some don't match?
+	// `rm` will just delete whatever possible and complain about the rest
+
+	pattern := fs.Arg(0)
+	dbs, err := c.client.AllDBs(context.TODO())
+	if err != nil {
 		return err
-	} else if !exists {
-		return DatabaseDoesNotExist
+	}
+	toDelete := make([]string, 0)
+
+	g := glob.MustCompile(pattern)
+	matches := 0
+	for _, db := range dbs {
+		if g.Match(db) {
+			toDelete = append(toDelete, db)
+			matches += 1
+		} else {
+			// c.Print("Does not exist " + db)
+		}
+	}
+	if matches == 0 {
+		c.Error("%s does not match any database", pattern)
 	}
 
-	in := prompt.Input("Please type "+db+" to delete it> ", func(prompt.Document) []prompt.Suggest {
-		return nil
-	})
-	if in != db {
-		fmt.Println("Okay, not deleting")
-		return nil
+	// if exists, err := c.client.DBExists(context.TODO(), db); err != nil {
+	// 	return err
+	// } else if !exists {
+	// 	return DatabaseDoesNotExist
+	// }
+
+	for _, db := range toDelete {
+		if !force {
+			in := prompt.Input("Please type "+db+" to delete it> ", func(prompt.Document) []prompt.Suggest {
+				return nil
+			})
+			if in != db {
+				c.Print("Okay, not deleting")
+				continue
+			}
+		}
+		if c.database != nil && db == c.database.Name() {
+			c.Print("Unselecting database before destroying")
+			c.database.Close(context.TODO())
+			c.database = nil
+			c.db = ""
+			c.prompt.SetPrompt(c.host)
+		}
+		if err := c.client.DestroyDB(context.TODO(), db); err != nil {
+			return err
+		}
+		c.Print("Database " + db + " destroyed")
 	}
-	if c.database != nil && db == c.database.Name() {
-		fmt.Println("Unselecting database before destroying")
-		c.database.Close(context.TODO())
-		c.database = nil
-		c.db = ""
-		c.prompt.SetPrompt(c.host)
-	}
-	if err := c.client.DestroyDB(context.TODO(), db); err != nil {
-		return err
-	}
-	fmt.Println("Database " + db + " destroyed")
 	return nil
 }
 
@@ -109,7 +144,7 @@ func Help(c *Clippan, args []string) error {
 				writeHelp = "(disabled, ro mode)"
 			}
 		}
-		fmt.Printf("%-20s  %s %s\n", ce.cmd, ce.help, writeHelp)
+		c.Print("%-20s  %s %s", ce.cmd, ce.help, writeHelp)
 	}
 	return nil
 }
@@ -120,7 +155,7 @@ func Databases(c *Clippan, args []string) error {
 		return err
 	}
 	for _, db := range dbs {
-		fmt.Println(db)
+		c.Print(db)
 	}
 	return nil
 }
@@ -141,7 +176,7 @@ func UseDB(c *Clippan, args []string) error {
 // Get returns a single document
 func Get(c *Clippan, args []string) error {
 	if c.database == nil {
-		fmt.Println("ERROR: Not connected to a database")
+		c.Error("Not connected to a database")
 		return NoDatabaseError
 	}
 	if len(args) != 2 {
@@ -203,7 +238,7 @@ func AllDocs(c *Clippan, args []string) error {
 		if err != nil {
 			return err
 		}
-		fmt.Printf("%s %v %+v\n", rows.ID(), key, string(data))
+		c.Print("%s %v %+v", rows.ID(), key, string(data))
 	}
 	if rows.Err() != nil {
 		return err
@@ -212,7 +247,7 @@ func AllDocs(c *Clippan, args []string) error {
 }
 
 func Exit(c *Clippan, args []string) error {
-	fmt.Println("Bye!")
+	c.Print("Bye!")
 	os.Exit(0)
 	return nil
 }
