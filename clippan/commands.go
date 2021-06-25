@@ -50,6 +50,30 @@ func init() {
 	}
 }
 
+func MatchDatabases(c *Clippan, patterns ...string) ([]string, []string, error) {
+	dbs, err := c.client.AllDBs(context.TODO())
+	if err != nil {
+		return nil, nil, err
+	}
+	mismatches := make([]string, 0)
+	matches := make([]string, 0)
+
+	for _, pattern := range patterns {
+		g := glob.MustCompile(pattern)
+		count := 0
+		for _, db := range dbs {
+			if g.Match(db) {
+				matches = append(matches, db)
+				count += 1
+			}
+		}
+		if count == 0 {
+			mismatches = append(mismatches, pattern)
+		}
+	}
+	return matches, mismatches, nil
+}
+
 func CreateDB(c *Clippan, args []string) error {
 	// Let's assume we also use it immediately
 	if len(args) != 2 {
@@ -79,25 +103,9 @@ func DeleteDB(c *Clippan, args []string) error {
 	fs.BoolVar(&force, "f", false, "Force operation")
 	fs.Parse(args[1:])
 
-	// Producing a list of existing databases (and a list of non-matching patterns) is something that can probably be reused
-	dbs, err := c.client.AllDBs(context.TODO())
+	toDelete, mismatches, err := MatchDatabases(c, fs.Args()...)
 	if err != nil {
 		return err
-	}
-	toDelete := make([]string, 0)
-
-	for _, pattern := range fs.Args() {
-		g := glob.MustCompile(pattern)
-		matches := 0
-		for _, db := range dbs {
-			if g.Match(db) {
-				toDelete = append(toDelete, db)
-				matches += 1
-			}
-		}
-		if matches == 0 {
-			c.Error("%s does not match any database", pattern)
-		}
 	}
 
 	for _, db := range toDelete {
@@ -122,6 +130,9 @@ func DeleteDB(c *Clippan, args []string) error {
 		}
 		c.Print("Database " + db + " destroyed")
 	}
+	for _, mismatch := range mismatches {
+		c.Error("No matches for pattern %s", mismatch)
+	}
 	return nil
 }
 
@@ -141,12 +152,22 @@ func Help(c *Clippan, args []string) error {
 }
 
 func Databases(c *Clippan, args []string) error {
-	dbs, err := c.client.AllDBs(context.TODO())
+	fs := flag.NewFlagSet(args[0], flag.ContinueOnError)
+	fs.Parse(args[1:])
+
+	patterns := fs.Args()
+	if len(patterns) == 0 {
+		patterns = []string{"*"}
+	}
+	matches, mismatches, err := MatchDatabases(c, patterns...)
 	if err != nil {
 		return err
 	}
-	for _, db := range dbs {
+	for _, db := range matches {
 		c.Print(db)
+	}
+	for _, mismatch := range mismatches {
+		c.Error("No matches for pattern %s", mismatch)
 	}
 	return nil
 }
