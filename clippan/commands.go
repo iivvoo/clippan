@@ -101,7 +101,9 @@ func DeleteDB(c *Clippan, args []string) error {
 	}
 	fs := flag.NewFlagSet(args[0], flag.ContinueOnError)
 	fs.BoolVar(&force, "f", false, "Force operation")
-	fs.Parse(args[1:])
+	if fs.Parse(args[1:]) == flag.ErrHelp {
+		return nil // help will be printed
+	}
 
 	toDelete, mismatches, err := MatchDatabases(c, fs.Args()...)
 	if err != nil {
@@ -152,8 +154,13 @@ func Help(c *Clippan, args []string) error {
 }
 
 func Databases(c *Clippan, args []string) error {
+	long := false
+
 	fs := flag.NewFlagSet(args[0], flag.ContinueOnError)
-	fs.Parse(args[1:])
+	fs.BoolVar(&long, "l", false, "Long list format")
+	if fs.Parse(args[1:]) == flag.ErrHelp {
+		return nil // help will be printed
+	}
 
 	patterns := fs.Args()
 	if len(patterns) == 0 {
@@ -163,8 +170,21 @@ func Databases(c *Clippan, args []string) error {
 	if err != nil {
 		return err
 	}
-	for _, db := range matches {
-		c.Print(db)
+	if long {
+		stats, err := c.client.DBsStats(context.TODO(), matches)
+		if err != nil {
+			return err
+		}
+		c.Print("%-50s %10s %10s", "Name", "#docs", "#deleted")
+		for _, s := range stats {
+			// Possibly truncate, ellipsize name
+			c.Print("%-50s %10d %10d", s.Name, s.DocCount, s.DeletedCount)
+		}
+
+	} else {
+		for _, db := range matches {
+			c.Print(db)
+		}
 	}
 	for _, mismatch := range mismatches {
 		c.Error("No matches for pattern %s", mismatch)
