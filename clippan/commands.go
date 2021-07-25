@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"flag"
+	"fmt"
 	"os"
 
 	"github.com/c-bata/go-prompt"
@@ -45,6 +46,7 @@ func init() {
 		{"deletedb", "Delete a database", true, NeedConnection, DeleteDB},
 		{"all", "List all docs, paginated", false, NeedDatabase, AllDocs},
 		{"get", "Get a single document by id", false, NeedDatabase, Get},
+		{"put", "Create a new document", true, NeedDatabase, Put},
 		{"exit", "Exit clippan", false, None, Exit},
 		{"help", "Show help", false, None, Help},
 	}
@@ -275,6 +277,26 @@ func AllDocs(c *Clippan, args []string) error {
 	if rows.Err() != nil {
 		return err
 	}
+	return nil
+}
+
+// Put craetes a new document
+func Put(c *Clippan, args []string) error {
+	if c.database == nil {
+		c.Error("Not connected to a database")
+		return NoDatabaseError
+	}
+	if len(args) != 2 {
+		return UsageError
+	}
+	id := args[1]
+
+	fmt.Println("edit " + id)
+	data, err := (&RealEditor{}).Edit(nil)
+	if err != nil {
+		return err
+	}
+	fmt.Println(string(data))
 	return nil
 }
 
