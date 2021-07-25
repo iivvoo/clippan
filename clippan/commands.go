@@ -47,6 +47,7 @@ func init() {
 		{"all", "List all docs, paginated", false, NeedDatabase, AllDocs},
 		{"get", "Get a single document by id", false, NeedDatabase, Get},
 		{"put", "Create a new document", true, NeedDatabase, Put},
+		{"edit", "Edit an existing document", true, NeedDatabase, Edit},
 		{"exit", "Exit clippan", false, None, Exit},
 		{"help", "Show help", false, None, Help},
 	}
@@ -281,7 +282,7 @@ func AllDocs(c *Clippan, args []string) error {
 }
 
 // Put craetes a new document
-func Put(c *Clippan, args []string) error {
+func EditPut(c *Clippan, args []string, allowCreate bool) error {
 	if c.database == nil {
 		c.Error("Not connected to a database")
 		return NoDatabaseError
@@ -292,6 +293,8 @@ func Put(c *Clippan, args []string) error {
 	id := args[1]
 
 	// If it exists, edit in stead. Possibly prefix with comment
+	// Put behaving like edit is fine, but edit should be
+	// explicitly on existing docs.
 	var doc interface{}
 	found, err := bench.GetOr404(c.database, id, &doc)
 	if err != nil {
@@ -299,11 +302,16 @@ func Put(c *Clippan, args []string) error {
 	}
 	data := []byte(`{"_id": "` + id + `"}`)
 	if found {
-		c.Print(id+" already exists, editing in stead", id)
+		if !allowCreate {
+			c.Print(id+" already exists, editing in stead", id)
+		}
 		if data, err = json.Marshal(&doc); err != nil {
 			return err
 		}
 	} else {
+		if !allowCreate {
+			return DocumentNotFoundError
+		}
 		c.Print("Creating " + id)
 	}
 
@@ -321,6 +329,13 @@ func Put(c *Clippan, args []string) error {
 	}
 	c.Print(rev)
 	return nil
+}
+func Edit(c *Clippan, args []string) error {
+	return EditPut(c, args, false)
+}
+
+func Put(c *Clippan, args []string) error {
+	return EditPut(c, args, true)
 }
 
 func Exit(c *Clippan, args []string) error {
