@@ -1,8 +1,10 @@
 package clippan
 
 import (
+	"fmt"
 	"io/ioutil"
 	"os"
+	"os/exec"
 )
 
 type Editor interface {
@@ -21,7 +23,7 @@ func (r *RealEditor) Edit(content []byte) ([]byte, error) {
 		return nil, err
 	}
 
-	defer os.Remove(tmpfile.Name())
+	// defer os.Remove(tmpfile.Name())
 
 	if _, err = tmpfile.Write(content); err != nil {
 		return nil, err
@@ -29,6 +31,22 @@ func (r *RealEditor) Edit(content []byte) ([]byte, error) {
 	if err := tmpfile.Close(); err != nil {
 		return nil, err
 	}
+	// get $EDITOR, from env or options
+	// (options should be initialized with env $EDITOR, if not set)
+	fmt.Println("Spawning editor on " + tmpfile.Name())
+	cmd := exec.Command("/usr/bin/nvim", tmpfile.Name())
+	cmd.Stdin = os.Stdin
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	if err := cmd.Run(); err != nil {
+		fmt.Println(err)
+		return nil, err
+	}
 
-	return []byte(`{"_id": "frop"}`), nil
+	dat, err := ioutil.ReadFile(tmpfile.Name())
+	if err != nil {
+		return nil, err
+	}
+
+	return dat, nil
 }

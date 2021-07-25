@@ -291,12 +291,23 @@ func Put(c *Clippan, args []string) error {
 	}
 	id := args[1]
 
+	// check if id exists, if so, offer to edit
 	fmt.Println("edit " + id)
-	data, err := (&RealEditor{}).Edit(nil)
+
+	tpl := `{"_id": "` + id + `"}`
+	data, err := (&RealEditor{}).Edit([]byte(tpl))
 	if err != nil {
 		return err
 	}
 	fmt.Println(string(data))
+	rev, err := c.database.Put(context.TODO(), id, data)
+	// Check if conflict, suggest solutions such as
+	// - replace
+	// - merge-edit
+	if err != nil {
+		return err
+	}
+	c.Print(rev)
 	return nil
 }
 
