@@ -155,8 +155,16 @@ func (c *Clippan) UseDB(db string) bool {
 	return true
 }
 
+func (c *Clippan) RunCmds(cmds string) {
+	if cmds != "" {
+		for _, cmd := range strings.Split(cmds, ";") {
+			c.Executer(cmd)
+		}
+	}
+}
+
 // Run starts clippan, connecting to the provided dsn (may be empty, may contain database). The optional (can be empty) cmd is a set of commands to parse
-func (c *Clippan) Run(cmd string) {
+func (c *Clippan) Run(cmds string) {
 	// for now let's assume it's without a database. We'll need to split anyway
 	fullDSN := c.dsn
 	if c.db != "" {
@@ -173,10 +181,6 @@ func (c *Clippan) Run(cmd string) {
 	}
 
 	// if c.database then db = c.client.DB(context.TODO(), c.database)
-	if cmd != "" {
-		for _, ccmd := range strings.Split(cmd, ";") {
-			c.Executer(ccmd)
-		}
-	}
+	c.RunCmds(cmds)
 	c.prompt.GetInput(c.Executer)
 }

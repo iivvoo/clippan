@@ -55,3 +55,20 @@ func TestClippan(t *testing.T) {
 		assert.True(c.UseDB("testing-test-clippan"))
 	}))
 }
+
+func TestRun(t *testing.T) {
+	DB := bench.DBSession("test-clippan-run")
+
+	t.Run("Test Run with cmd", DB(func(cdb *bench.CouchDB, t *testing.T) {
+		assert := assert.New(t)
+		p := &TestPrinter{}
+		c := NewTestClippan(cdb, false, p)
+		c.RunCmds("a;b -c")
+
+		assert.Len(p.Errors, 2)
+		assert.Len(p.Debugs, 2)
+		assert.Equal("Command: []string{\"a\"}\n", p.Debugs[0])
+		assert.Equal("Command: []string{\"b\", \"-c\"}\n", p.Debugs[1])
+	}))
+
+}
