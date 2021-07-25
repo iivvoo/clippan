@@ -291,11 +291,23 @@ func Put(c *Clippan, args []string) error {
 	}
 	id := args[1]
 
-	// check if id exists, if so, offer to edit
-	fmt.Println("edit " + id)
+	// If it exists, edit in stead. Possibly prefix with comment
+	var doc interface{}
+	found, err := bench.GetOr404(c.database, id, &doc)
+	if err != nil {
+		return err
+	}
+	data := []byte(`{"_id": "` + id + `"}`)
+	if found {
+		c.Print(id+" already exists, editing in stead", id)
+		if data, err = json.Marshal(&doc); err != nil {
+			return err
+		}
+	} else {
+		c.Print("Creating " + id)
+	}
 
-	tpl := `{"_id": "` + id + `"}`
-	data, err := (&RealEditor{}).Edit([]byte(tpl))
+	data, err = (&RealEditor{}).Edit(data)
 	if err != nil {
 		return err
 	}
