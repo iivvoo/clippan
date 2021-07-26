@@ -11,14 +11,20 @@ type Editor interface {
 	Edit([]byte) ([]byte, error)
 }
 
-type RealEditor struct{}
+type RealEditor struct {
+	editor string
+}
+
+func NewRealEditor(editor string) *RealEditor {
+	return &RealEditor{editor}
+}
 
 func (r *RealEditor) Edit(content []byte) ([]byte, error) {
 	// Create a temp file with "existing"
 	// find suitable editor, based on $EDITOR and other settings
 	// spawn editor, wait
 	// re-read temp file, return that data
-	tmpfile, err := ioutil.TempFile("", "example")
+	tmpfile, err := ioutil.TempFile("", "clippan")
 	if err != nil {
 		return nil, err
 	}
@@ -34,7 +40,7 @@ func (r *RealEditor) Edit(content []byte) ([]byte, error) {
 	// get $EDITOR, from env or options
 	// (options should be initialized with env $EDITOR, if not set)
 	fmt.Println("Spawning editor on " + tmpfile.Name())
-	cmd := exec.Command("/usr/bin/nvim", tmpfile.Name())
+	cmd := exec.Command(r.editor, tmpfile.Name())
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr

@@ -333,7 +333,7 @@ func EditPut(c *Clippan, args []string, allowCreate bool) error {
 
 	// as long as we don't successfully safe or get errors
 	for {
-		data, err = (&RealEditor{}).Edit(data)
+		data, err = c.Editor.Edit(data)
 		if err != nil {
 			return err
 		}

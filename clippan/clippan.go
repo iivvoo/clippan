@@ -44,6 +44,7 @@ type Clippan struct {
 	client   *kivik.Client
 	database *kivik.DB
 	Printer  Printer
+	Editor   Editor
 	//
 	enableWrite bool
 	host        string
@@ -60,6 +61,7 @@ func NewClippan(dsn string, enableWrite bool) *Clippan {
 	u.Path = ""
 	dsn = u.String()
 
+	editor := NewRealEditor("/usr/bin/nvim")
 	p := NewPrompt()
 	return &Clippan{
 		dsn:         dsn,
@@ -69,6 +71,7 @@ func NewClippan(dsn string, enableWrite bool) *Clippan {
 		host:        u.Host,
 		prompt:      p,
 		Printer:     &TextPrinter{},
+		Editor:      editor,
 	}
 }
 
