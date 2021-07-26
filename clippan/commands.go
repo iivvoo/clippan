@@ -1,12 +1,15 @@
 package clippan
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
 	"flag"
 	"fmt"
+	"net/http"
 	"os"
+	"strings"
 
 	"github.com/c-bata/go-prompt"
 	"github.com/go-kivik/kivik/v4"
@@ -281,6 +284,25 @@ func AllDocs(c *Clippan, args []string) error {
 	return nil
 }
 
+// GetDocRaw gets a document as raw bytes. It returns DocumentNotFoundError
+// if not found, or any other error encountered
+func GetDocRaw(c *Clippan, id string) ([]byte, map[string]interface{}, error) {
+	var doc map[string]interface{}
+	found, err := bench.GetOr404(c.database, id, &doc)
+	if err != nil {
+		return nil, nil, err
+	}
+	if !found {
+		return nil, nil, DocumentNotFoundError
+	}
+
+	var data []byte
+	if data, err = json.Marshal(&doc); err != nil {
+		return nil, nil, err
+	}
+	return data, doc, nil
+}
+
 // Put craetes a new document
 func EditPut(c *Clippan, args []string, allowCreate bool) error {
 	if c.database == nil {
@@ -292,44 +314,91 @@ func EditPut(c *Clippan, args []string, allowCreate bool) error {
 	}
 	id := args[1]
 
-	// If it exists, edit in stead. Possibly prefix with comment
-	// Put behaving like edit is fine, but edit should be
-	// explicitly on existing docs.
-	var doc interface{}
-	found, err := bench.GetOr404(c.database, id, &doc)
-	if err != nil {
+	data, _, err := GetDocRaw(c, id)
+
+	if err != nil && err != DocumentNotFoundError {
 		return err
 	}
-	data := []byte(`{"_id": "` + id + `"}`)
-	if found {
-		if !allowCreate {
-			c.Print(id+" already exists, editing in stead", id)
-		}
-		if data, err = json.Marshal(&doc); err != nil {
-			return err
-		}
-	} else {
+	if err == DocumentNotFoundError {
+		data = []byte(`{"_id": "` + id + `"}`)
 		if !allowCreate {
 			return DocumentNotFoundError
 		}
 		c.Print("Creating " + id)
+	} else {
+		if !allowCreate {
+			c.Print(id+" already exists, editing in stead", id)
+		}
 	}
 
-	data, err = (&RealEditor{}).Edit(data)
-	if err != nil {
-		return err
+	// as long as we don't successfully safe or get errors
+	for {
+		data, err = (&RealEditor{}).Edit(data)
+		if err != nil {
+			return err
+		}
+		if err = ValidateJSON(data); err != nil {
+			fmt.Println(err)
+			c.Error("Does not look like valid json")
+			in := prompt.Input("Document does not validate as json. (E)dit again or (A)bort?> ", func(prompt.Document) []prompt.Suggest {
+				// suggest abort / merge?
+				return nil
+			})
+			in = strings.ToLower(in)
+			if in == "a" {
+				return nil
+			}
+			continue // try again
+		}
+
+		fmt.Println(string(data))
+		rev, err := c.database.Put(context.TODO(), id, data)
+		// Check if conflict, suggest solutions such as
+		// - replace
+		// - merge-edit
+		if err == nil {
+			c.Print(rev)
+			break
+
+		}
+		if kivik.StatusCode(err) == http.StatusConflict {
+			fmt.Println("Conflict " + rev)
+			newerData, doc, err := GetDocRaw(c, id)
+			if err != nil { // even if DocumentNotFoundError because that wouldn't make sense at all
+				return err
+			}
+			rev = doc["_rev"].(string)
+			in := prompt.Input("Conflict with rev "+rev+". (A)bort, (F)orce or (E)dit with diff?> ", func(prompt.Document) []prompt.Suggest {
+				// suggest abort / merge?
+				return nil
+			})
+			in = strings.ToLower(in)
+			if in == "a" {
+				return nil
+			}
+			buf := bytes.NewBuffer(data)
+			buf.WriteRune('\n')
+			buf.Write(newerData)
+			data = buf.Bytes()
+			// f would mean replace the rev and save again
+
+			// get data? Or do we get rev? either way we
+			// wamt to diff or provide both
+		} else {
+			// notify user of error so they can perhaps fix issue or retry
+			return err
+
+		}
 	}
-	fmt.Println(string(data))
-	rev, err := c.database.Put(context.TODO(), id, data)
-	// Check if conflict, suggest solutions such as
-	// - replace
-	// - merge-edit
-	if err != nil {
-		return err
-	}
-	c.Print(rev)
 	return nil
 }
+
+func ValidateJSON(data []byte) error {
+	var x interface{}
+	fmt.Println("validatejson:", data)
+	return json.Unmarshal(data, &x)
+}
+
 func Edit(c *Clippan, args []string) error {
 	return EditPut(c, args, false)
 }
