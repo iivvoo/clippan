@@ -57,3 +57,18 @@ func (p *Prompt) GetInput(executer func(string)) {
 	p._executer = executer
 	p.prompt.Run()
 }
+
+// Request simple input
+func (p *Prompt) Input(s string) string {
+	return prompt.Input(s,
+		func(prompt.Document) []prompt.Suggest {
+			return nil
+		},
+	)
+}
+
+type Prompter interface {
+	GetInput(func(string))
+	SetPrompt(string)
+	Input(string) string
+}

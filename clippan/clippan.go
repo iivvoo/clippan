@@ -49,7 +49,7 @@ type Clippan struct {
 	enableWrite bool
 	host        string
 	db          string // database.Name() ??
-	prompt      *Prompt
+	prompt      Prompter
 }
 
 func NewClippan(dsn string, enableWrite bool) *Clippan {

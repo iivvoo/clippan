@@ -28,16 +28,51 @@ func (t *TestPrinter) JSON(raw []byte) {
 	t.JSONS = append(t.JSONS, raw)
 }
 
-func NewTestClippan(testdb *bench.CouchDB, enableWrite bool, printer Printer) *Clippan {
-	p := NewPrompt()
+type MockEditor struct {
+	result []byte
+	err    error
+}
+
+func NewMockEditor() *MockEditor {
+	return &MockEditor{}
+}
+func (m *MockEditor) SetMockData(result []byte, err error) *MockEditor {
+	m.result = result
+	m.err = err
+	return m
+}
+
+func (m *MockEditor) Edit(content []byte) ([]byte, error) {
+	return m.result, m.err
+}
+
+type MockPrompt struct {
+	result string
+}
+
+func NewMockPrompt() *MockPrompt {
+	return &MockPrompt{}
+}
+func (m *MockPrompt) SetMockData(result string) *MockPrompt {
+	m.result = result
+	return m
+}
+func (m *MockPrompt) GetInput(func(string)) {}
+func (m *MockPrompt) SetPrompt(string)      {}
+func (m *MockPrompt) Input(s string) string {
+	return m.result
+}
+func NewTestClippan(testdb *bench.CouchDB, enableWrite bool, printer Printer, editor Editor, prompt Prompter) *Clippan {
+	// p := NewPrompt()
 	return &Clippan{
 		dsn:         "",
 		db:          "",
 		client:      testdb.Client(),
 		enableWrite: enableWrite,
 		host:        "",
-		prompt:      p,
+		prompt:      prompt,
 		Printer:     printer,
+		Editor:      editor,
 	}
 }
 
@@ -47,7 +82,7 @@ func TestClippan(t *testing.T) {
 	t.Run("Test UseDB", DB(func(cdb *bench.CouchDB, t *testing.T) {
 		assert := assert.New(t)
 
-		c := NewTestClippan(cdb, false, &TestPrinter{})
+		c := NewTestClippan(cdb, false, &TestPrinter{}, NewMockEditor(), NewMockPrompt())
 
 		// This database does not exist (I hope)
 		assert.False(c.UseDB("testKJHANFIU"))
@@ -62,7 +97,7 @@ func TestRun(t *testing.T) {
 	t.Run("Test Run with cmd", DB(func(cdb *bench.CouchDB, t *testing.T) {
 		assert := assert.New(t)
 		p := &TestPrinter{}
-		c := NewTestClippan(cdb, false, p)
+		c := NewTestClippan(cdb, false, p, NewMockEditor(), NewMockPrompt())
 		c.RunCmds("a;b -c")
 
 		assert.Len(p.Errors, 2)

@@ -11,7 +11,6 @@ import (
 	"os"
 	"strings"
 
-	"github.com/c-bata/go-prompt"
 	"github.com/go-kivik/kivik/v4"
 	"github.com/gobwas/glob"
 	"github.com/iivvoo/clippan/bench"
@@ -118,9 +117,7 @@ func DeleteDB(c *Clippan, args []string) error {
 
 	for _, db := range toDelete {
 		if !force {
-			in := prompt.Input("Please type "+db+" to delete it> ", func(prompt.Document) []prompt.Suggest {
-				return nil
-			})
+			in := c.prompt.Input("Please type " + db + " to delete it> ")
 			if in != db {
 				c.Print("Okay, not deleting")
 				continue
@@ -340,10 +337,7 @@ func EditPut(c *Clippan, args []string, allowCreate bool) error {
 		if err = ValidateJSON(data); err != nil {
 			fmt.Println(err)
 			c.Error("Does not look like valid json")
-			in := prompt.Input("Document does not validate as json. (E)dit again or (A)bort?> ", func(prompt.Document) []prompt.Suggest {
-				// suggest abort / merge?
-				return nil
-			})
+			in := c.prompt.Input("Document does not validate as json. (E)dit again or (A)bort?> ")
 			in = strings.ToLower(in)
 			if in == "a" {
 				return nil
@@ -368,10 +362,7 @@ func EditPut(c *Clippan, args []string, allowCreate bool) error {
 				return err
 			}
 			rev = doc["_rev"].(string)
-			in := prompt.Input("Conflict with rev "+rev+". (A)bort, (F)orce or (E)dit with diff?> ", func(prompt.Document) []prompt.Suggest {
-				// suggest abort / merge?
-				return nil
-			})
+			in := c.prompt.Input("Conflict with rev " + rev + ". (A)bort, (F)orce or (E)dit with diff?> ")
 			in = strings.ToLower(in)
 			if in == "a" {
 				return nil
