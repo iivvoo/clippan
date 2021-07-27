@@ -345,7 +345,6 @@ func EditPut(c *Clippan, args []string, allowCreate bool) error {
 			continue // try again
 		}
 
-		fmt.Println(string(data))
 		rev, err := c.database.Put(context.TODO(), id, data)
 		// Check if conflict, suggest solutions such as
 		// - replace
