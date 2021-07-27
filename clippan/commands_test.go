@@ -74,17 +74,19 @@ func TestEditPut(t *testing.T) {
 		printer := &TestPrinter{}
 
 		json := []byte(`{"_id":"test1" "v":42}`) // , missing
+		prompt := NewMockPrompt().SetMockData("a")
 		c := NewTestClippan(cdb,
 			true,
 			printer,
 			NewMockEditor().SetMockData(json, nil),
-			NewMockPrompt().SetMockData("a"),
+			prompt,
 		)
 
 		// Activate the testing database
 		c.Executer("use " + cdb.DB().Name())
 		c.Executer("put test1")
-		assert.Len(printer.Errors, 1)
+		// Assert that input has been asked
+		assert.Len(prompt.Inputs, 1)
 
 		var doc map[string]interface{}
 
@@ -163,17 +165,19 @@ func TestEditPut(t *testing.T) {
 		assert.NoError(err)
 
 		editor := &ConflictEditor{cdb: cdb, id: "test1"}
+		prompt := NewMockPrompt().SetMockData("a")
 		c := NewTestClippan(cdb,
 			true,
 			printer,
 			editor,
-			NewMockPrompt().SetMockData("a"),
+			prompt,
 		)
 
 		// Activate the testing database
 		c.Executer("use " + cdb.DB().Name())
 		c.Executer("edit test1")
-		assert.Len(printer.Errors, 0)
+		// Assert that input has been asked
+		assert.Len(prompt.Inputs, 1)
 
 		var doc map[string]interface{}
 

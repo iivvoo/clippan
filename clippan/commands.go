@@ -203,10 +203,6 @@ func UseDB(c *Clippan, args []string) error {
 	return nil
 }
 
-/*
- * Also, c.Error() in stead of all the Println's
- */
-
 // Get returns a single document
 func Get(c *Clippan, args []string) error {
 	if c.database == nil {
@@ -334,8 +330,6 @@ func EditPut(c *Clippan, args []string, allowCreate bool) error {
 			return err
 		}
 		if err = ValidateJSON(data); err != nil {
-			// XXX duplicate - depend on just prompt!
-			c.Error("Does not look like valid json")
 			in := c.prompt.Input("Document does not validate as json. (E)dit again or (A)bort?> ")
 			in = strings.ToLower(in)
 			if in == "a" {

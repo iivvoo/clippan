@@ -48,6 +48,7 @@ func (m *MockEditor) Edit(content []byte) ([]byte, error) {
 
 type MockPrompt struct {
 	result string
+	Inputs []string
 }
 
 func NewMockPrompt() *MockPrompt {
@@ -60,6 +61,7 @@ func (m *MockPrompt) SetMockData(result string) *MockPrompt {
 func (m *MockPrompt) GetInput(func(string)) {}
 func (m *MockPrompt) SetPrompt(string)      {}
 func (m *MockPrompt) Input(s string) string {
+	m.Inputs = append(m.Inputs, s)
 	return m.result
 }
 func NewTestClippan(testdb *bench.CouchDB, enableWrite bool, printer Printer, editor Editor, prompt Prompter) *Clippan {
