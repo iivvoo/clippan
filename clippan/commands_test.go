@@ -69,6 +69,29 @@ func TestEditPut(t *testing.T) {
 		// standard unmarshalling makes it a float64, not int
 		assert.EqualValues(42, doc["v"].(float64))
 	}))
+	t.Run("Test invalid json put/create flow", DB(func(cdb *bench.CouchDB, t *testing.T) {
+		assert := assert.New(t)
+		printer := &TestPrinter{}
+
+		json := []byte(`{"_id":"test1" "v":42}`) // , missing
+		c := NewTestClippan(cdb,
+			true,
+			printer,
+			NewMockEditor().SetMockData(json, nil),
+			NewMockPrompt().SetMockData("a"),
+		)
+
+		// Activate the testing database
+		c.Executer("use " + cdb.DB().Name())
+		c.Executer("put test1")
+		assert.Len(printer.Errors, 1)
+
+		var doc map[string]interface{}
+
+		found, err := bench.GetOr404(cdb.GetDB(), "test1", &doc)
+		assert.NoError(err)
+		assert.False(found)
+	}))
 
 	t.Run("Test normal edit flow", DB(func(cdb *bench.CouchDB, t *testing.T) {
 		assert := assert.New(t)
@@ -129,4 +152,82 @@ func TestEditPut(t *testing.T) {
 		// It should not have been created
 		assert.False(found)
 	}))
+
+	t.Run("Test conflict edit flow", DB(func(cdb *bench.CouchDB, t *testing.T) {
+		assert := assert.New(t)
+		printer := &TestPrinter{}
+
+		json := []byte(`{"_id":"test1", "v":42}`)
+
+		_, err := cdb.DB().Put(context.TODO(), "test1", json)
+		assert.NoError(err)
+
+		editor := &ConflictEditor{cdb: cdb, id: "test1"}
+		c := NewTestClippan(cdb,
+			true,
+			printer,
+			editor,
+			NewMockPrompt().SetMockData("a"),
+		)
+
+		// Activate the testing database
+		c.Executer("use " + cdb.DB().Name())
+		c.Executer("edit test1")
+		assert.Len(printer.Errors, 0)
+
+		var doc map[string]interface{}
+
+		found, err := bench.GetOr404(cdb.GetDB(), "test1", &doc)
+		assert.NoError(err)
+		assert.True(found)
+		// It shouldn't have changed
+		assert.EqualValues(editor.revResult, doc["_rev"].(string))
+		assert.EqualValues(42, doc["v"].(float64))
+	}))
+
+	// force not yet implemented
+	// t.Run("Test conflict edit flow, force change", DB(func(cdb *bench.CouchDB, t *testing.T) {
+	// 	assert := assert.New(t)
+	// 	printer := &TestPrinter{}
+	//
+	// 	json := []byte(`{"_id":"test1", "v":42}`)
+	//
+	// 	_, err := cdb.DB().Put(context.TODO(), "test1", json)
+	// 	assert.NoError(err)
+	//
+	// 	editor := &ConflictEditor{cdb: cdb, id: "test1"}
+	// 	c := NewTestClippan(cdb,
+	// 		true,
+	// 		printer,
+	// 		editor,
+	// 		NewMockPrompt().SetMockData("f"), // f = force
+	// 	)
+	//
+	// 	// Activate the testing database
+	// 	c.Executer("use " + cdb.DB().Name())
+	// 	c.Executer("edit test1")
+	// 	assert.Len(printer.Errors, 0)
+	//
+	// 	var doc map[string]interface{}
+	//
+	// 	found, err := bench.GetOr404(cdb.GetDB(), "test1", &doc)
+	// 	assert.NoError(err)
+	// 	assert.True(found)
+	// 	// The rev should differ from what the editor created!
+	// 	assert.NotEqual(editor.revResult, doc["_rev"].(string))
+	// 	assert.EqualValues(42, doc["v"].(float64))
+	// }))
+}
+
+type ConflictEditor struct {
+	id        string
+	cdb       *bench.CouchDB
+	revResult string
+	errResult error
+}
+
+func (c *ConflictEditor) Edit(content []byte) ([]byte, error) {
+	// fake the conflict by saving it here
+	c.revResult, c.errResult = c.cdb.DB().Put(context.TODO(), c.id, content)
+	return content, nil
 }

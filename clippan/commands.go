@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"errors"
 	"flag"
-	"fmt"
 	"net/http"
 	"os"
 	"strings"
@@ -335,7 +334,7 @@ func EditPut(c *Clippan, args []string, allowCreate bool) error {
 			return err
 		}
 		if err = ValidateJSON(data); err != nil {
-			fmt.Println(err)
+			// XXX duplicate - depend on just prompt!
 			c.Error("Does not look like valid json")
 			in := c.prompt.Input("Document does not validate as json. (E)dit again or (A)bort?> ")
 			in = strings.ToLower(in)
@@ -355,13 +354,12 @@ func EditPut(c *Clippan, args []string, allowCreate bool) error {
 
 		}
 		if kivik.StatusCode(err) == http.StatusConflict {
-			fmt.Println("Conflict " + rev)
 			newerData, doc, err := GetDocRaw(c, id)
 			if err != nil { // even if DocumentNotFoundError because that wouldn't make sense at all
 				return err
 			}
 			rev = doc["_rev"].(string)
-			in := c.prompt.Input("Conflict with rev " + rev + ". (A)bort, (F)orce or (E)dit with diff?> ")
+			in := c.prompt.Input("Conflict with rev " + rev + ". (A)bort, [(F)orce] or (E)dit with diff?> ")
 			in = strings.ToLower(in)
 			if in == "a" {
 				return nil
@@ -385,7 +383,6 @@ func EditPut(c *Clippan, args []string, allowCreate bool) error {
 
 func ValidateJSON(data []byte) error {
 	var x interface{}
-	fmt.Println("validatejson:", data)
 	return json.Unmarshal(data, &x)
 }
 
