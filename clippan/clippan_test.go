@@ -72,7 +72,7 @@ func NewTestClippan(testdb *bench.CouchDB, enableWrite bool, printer Printer, ed
 		client:      testdb.Client(),
 		enableWrite: enableWrite,
 		host:        "",
-		prompt:      prompt,
+		Prompt:      prompt,
 		Printer:     printer,
 		Editor:      editor,
 	}

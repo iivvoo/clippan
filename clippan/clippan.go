@@ -43,13 +43,15 @@ type Clippan struct {
 	dsn      string
 	client   *kivik.Client
 	database *kivik.DB
-	Printer  Printer
-	Editor   Editor
+
+	// DI
+	Printer Printer
+	Editor  Editor
+	Prompt  Prompter
 	//
 	enableWrite bool
 	host        string
 	db          string // database.Name() ??
-	prompt      Prompter
 }
 
 func NewClippan(dsn string, enableWrite bool) *Clippan {

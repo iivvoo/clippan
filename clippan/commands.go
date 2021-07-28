@@ -116,7 +116,7 @@ func DeleteDB(c *Clippan, args []string) error {
 
 	for _, db := range toDelete {
 		if !force {
-			in := c.prompt.Input("Please type " + db + " to delete it> ")
+			in := c.Prompt.Input("Please type " + db + " to delete it> ")
 			if in != db {
 				c.Print("Okay, not deleting")
 				continue
@@ -127,7 +127,7 @@ func DeleteDB(c *Clippan, args []string) error {
 			c.database.Close(context.TODO())
 			c.database = nil
 			c.db = ""
-			c.prompt.SetPrompt(c.host)
+			c.Prompt.SetPrompt(c.host)
 		}
 		if err := c.client.DestroyDB(context.TODO(), db); err != nil {
 			return err
@@ -330,7 +330,7 @@ func EditPut(c *Clippan, args []string, allowCreate bool) error {
 			return err
 		}
 		if err = ValidateJSON(data); err != nil {
-			in := c.prompt.Input("Document does not validate as json. (E)dit again or (A)bort?> ")
+			in := c.Prompt.Input("Document does not validate as json. (E)dit again or (A)bort?> ")
 			in = strings.ToLower(in)
 			if in == "a" {
 				return nil
@@ -345,15 +345,15 @@ func EditPut(c *Clippan, args []string, allowCreate bool) error {
 		if err == nil {
 			c.Print(rev)
 			break
-
 		}
+
 		if kivik.StatusCode(err) == http.StatusConflict {
 			newerData, doc, err := GetDocRaw(c, id)
 			if err != nil { // even if DocumentNotFoundError because that wouldn't make sense at all
 				return err
 			}
 			rev = doc["_rev"].(string)
-			in := c.prompt.Input("Conflict with rev " + rev + ". (A)bort, [(F)orce] or (E)dit with diff?> ")
+			in := c.Prompt.Input("Conflict with rev " + rev + ". (A)bort, [(F)orce] or (E)dit with diff?> ")
 			in = strings.ToLower(in)
 			if in == "a" {
 				return nil
