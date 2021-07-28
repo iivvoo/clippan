@@ -49,6 +49,7 @@ func init() {
 		{"get", "Get a single document by id", false, NeedDatabase, Get},
 		{"put", "Create a new document", true, NeedDatabase, Put},
 		{"edit", "Edit an existing document", true, NeedDatabase, Edit},
+		{"query", "Query a view", false, NeedDatabase, Query},
 		{"exit", "Exit clippan", false, None, Exit},
 		{"help", "Show help", false, None, Help},
 	}
@@ -391,5 +392,67 @@ func Put(c *Clippan, args []string) error {
 func Exit(c *Clippan, args []string) error {
 	c.Print("Bye!")
 	os.Exit(0)
+	return nil
+}
+
+// Query might be aliased / shortcut to Map(view), Reduce?
+func Query(c *Clippan, args []string) error {
+	/*
+	 * Steps:
+	 * - query a simple view, list all results
+	 */
+	var reduce bool
+	var level int
+
+	fs := flag.NewFlagSet(args[0], flag.ContinueOnError)
+	fs.BoolVar(&reduce, "reduce", false, "Reduce query")
+	fs.IntVar(&level, "level", 0, "Reduce group level")
+	if fs.Parse(args[1:]) == flag.ErrHelp {
+		return nil // help will be printed
+	}
+	if len(fs.Args()) != 2 {
+		c.Error("Please specify designdoc and view")
+		return nil
+	}
+	ddoc := fs.Arg(0)
+	view := fs.Arg(1)
+	c.Print("Querying %s / %s", ddoc, view)
+
+	options := kivik.Options{
+		// "startkey":     "",
+		// "endkey":       endKey,
+		// "include_docs": true,
+		"skip":   0,
+		"limit":  50,
+		"reduce": false,
+	}
+
+	if reduce {
+		options["reduce"] = true
+		options["group_level"] = level
+	}
+	rows, err := c.database.Query(context.TODO(),
+		"_design/"+ddoc, "_view/"+view, options,
+	)
+	if err != nil {
+		return err
+	}
+	defer rows.Close()
+	c.Print("%20v %20v %20s", "Key", "Value", "doc ID")
+	for rows.Next() {
+		var key, value interface{}
+		// var doc struct{ _id string }
+		if err = rows.ScanKey(&key); err != nil {
+			return err
+		}
+		if err = rows.ScanValue(&value); err != nil {
+			return err
+		}
+		// if err := rows.ScanDoc(&doc); err != nil {
+		// 	return err
+		// }
+		c.Print("%20v %20v %20s", key, value, rows.ID())
+	}
+
 	return nil
 }
