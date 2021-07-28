@@ -296,7 +296,7 @@ func GetDocRaw(c *Clippan, id string) ([]byte, map[string]interface{}, error) {
 }
 
 // Put craetes a new document
-func EditPut(c *Clippan, args []string, allowCreate bool) error {
+func EditPut(c *Clippan, args []string, onlyEdit bool) error {
 	if c.database == nil {
 		c.Error("Not connected to a database")
 		return NoDatabaseError
@@ -313,13 +313,13 @@ func EditPut(c *Clippan, args []string, allowCreate bool) error {
 	}
 	if err == DocumentNotFoundError {
 		data = []byte(`{"_id": "` + id + `"}`)
-		if !allowCreate {
+		if onlyEdit {
 			return DocumentNotFoundError
 		}
 		c.Print("Creating " + id)
 	} else {
-		if !allowCreate {
-			c.Print(id+" already exists, editing in stead", id)
+		if !onlyEdit {
+			c.Print("%s already exists, editing in stead", id)
 		}
 	}
 
@@ -381,11 +381,11 @@ func ValidateJSON(data []byte) error {
 }
 
 func Edit(c *Clippan, args []string) error {
-	return EditPut(c, args, false)
+	return EditPut(c, args, true)
 }
 
 func Put(c *Clippan, args []string) error {
-	return EditPut(c, args, true)
+	return EditPut(c, args, false)
 }
 
 func Exit(c *Clippan, args []string) error {
