@@ -71,7 +71,7 @@ func NewClippan(dsn string, enableWrite bool) *Clippan {
 		client:      nil,
 		enableWrite: enableWrite,
 		host:        u.Host,
-		prompt:      p,
+		Prompt:      p,
 		Printer:     &TextPrinter{},
 		Editor:      editor,
 	}
@@ -156,7 +156,7 @@ func (c *Clippan) UseDB(db string) bool {
 	if c.enableWrite {
 		mode = "(rw)"
 	}
-	c.prompt.SetPrompt(c.host + "/" + c.db + mode)
+	c.Prompt.SetPrompt(c.host + "/" + c.db + mode)
 	return true
 }
 
@@ -182,10 +182,10 @@ func (c *Clippan) Run(cmds string) {
 	} else if c.db != "" {
 		c.UseDB(c.db)
 	} else {
-		c.prompt.SetPrompt(c.host)
+		c.Prompt.SetPrompt(c.host)
 	}
 
 	// if c.database then db = c.client.DB(context.TODO(), c.database)
 	c.RunCmds(cmds)
-	c.prompt.GetInput(c.Executer)
+	c.Prompt.GetInput(c.Executer)
 }
