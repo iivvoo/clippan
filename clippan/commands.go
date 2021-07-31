@@ -395,23 +395,31 @@ func Exit(c *Clippan, args []string) error {
 	return nil
 }
 
+type QueryResult struct {
+	ID    string      `json:"id"`
+	Key   interface{} `json:"key"`
+	Value interface{} `json:"value"`
+}
+
 // Query might be aliased / shortcut to Map(view), Reduce?
 func Query(c *Clippan, args []string) error {
 	/*
 	 * Steps:
 	 * - query a simple view, list all results
 	 */
-	var reduce bool
+	var reduce, useJson bool
 	var level int
 
 	fs := flag.NewFlagSet(args[0], flag.ContinueOnError)
 	fs.BoolVar(&reduce, "reduce", false, "Reduce query")
 	fs.IntVar(&level, "level", 0, "Reduce group level")
-	if fs.Parse(args[1:]) == flag.ErrHelp {
-		return nil // help will be printed
+	fs.BoolVar(&useJson, "json", false, "Output json")
+	if fs.Parse(args[1:]) != nil {
+		return nil // help will have been printed
 	}
-	if len(fs.Args()) != 2 {
-		c.Error("Please specify designdoc and view")
+	if fs.NArg() != 2 {
+		fs.Usage()
+		// c.Error("Please specify designdoc and view")
 		return nil
 	}
 	ddoc := fs.Arg(0)
@@ -438,7 +446,9 @@ func Query(c *Clippan, args []string) error {
 		return err
 	}
 	defer rows.Close()
-	c.Print("%20v %20v %20s", "Key", "Value", "doc ID")
+
+	var result []*QueryResult
+
 	for rows.Next() {
 		var key, value interface{}
 		// var doc struct{ _id string }
@@ -451,8 +461,31 @@ func Query(c *Clippan, args []string) error {
 		// if err := rows.ScanDoc(&doc); err != nil {
 		// 	return err
 		// }
-		c.Print("%20v %20v %20s", key, value, rows.ID())
+		result = append(result, &QueryResult{ID: rows.ID(), Key: key, Value: value})
+	}
+	if useJson {
+		c.JSON(MustMarshal(result))
+	} else {
+		c.Print("%20v %20v %20s", "Key", "Value", "doc ID")
+		for _, r := range result {
+
+			c.Print("%20v %20v %20s", r.Key, r.Value, r.ID)
+		}
 	}
 
 	return nil
+}
+
+func MustMarshal(v interface{}) []byte {
+	r, err := json.Marshal(v)
+	if err != nil {
+		panic(err)
+	}
+	return r
+}
+
+func MustUnmarshal(raw []byte, target interface{}) {
+	if err := json.Unmarshal(raw, target); err != nil {
+		panic(err)
+	}
 }
