@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/iivvoo/clippan/bench"
+	"github.com/iivvoo/clippan/helpers"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -64,7 +64,7 @@ func (m *MockPrompt) Input(s string) string {
 	m.Inputs = append(m.Inputs, s)
 	return m.result
 }
-func NewTestClippan(testdb *bench.CouchDB, enableWrite bool, printer Printer, editor Editor, prompt Prompter) *Clippan {
+func NewTestClippan(testdb *helpers.CouchDB, enableWrite bool, printer Printer, editor Editor, prompt Prompter) *Clippan {
 	// p := NewPrompt()
 	return &Clippan{
 		dsn:         "",
@@ -79,9 +79,9 @@ func NewTestClippan(testdb *bench.CouchDB, enableWrite bool, printer Printer, ed
 }
 
 func TestClippan(t *testing.T) {
-	DB := bench.DBSession("test-clippan")
+	DB := helpers.DBSession("test-clippan")
 
-	t.Run("Test UseDB", DB(func(cdb *bench.CouchDB, t *testing.T) {
+	t.Run("Test UseDB", DB(func(cdb *helpers.CouchDB, t *testing.T) {
 		assert := assert.New(t)
 
 		c := NewTestClippan(cdb, false, &TestPrinter{}, NewMockEditor(), NewMockPrompt())
@@ -94,9 +94,9 @@ func TestClippan(t *testing.T) {
 }
 
 func TestRun(t *testing.T) {
-	DB := bench.DBSession("test-clippan-run")
+	DB := helpers.DBSession("test-clippan-run")
 
-	t.Run("Test Run with cmd", DB(func(cdb *bench.CouchDB, t *testing.T) {
+	t.Run("Test Run with cmd", DB(func(cdb *helpers.CouchDB, t *testing.T) {
 		assert := assert.New(t)
 		p := &TestPrinter{}
 		c := NewTestClippan(cdb, false, p, NewMockEditor(), NewMockPrompt())

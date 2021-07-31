@@ -12,7 +12,7 @@ import (
 
 	"github.com/go-kivik/kivik/v4"
 	"github.com/gobwas/glob"
-	"github.com/iivvoo/clippan/bench"
+	"github.com/iivvoo/clippan/helpers"
 )
 
 type Flag uint8
@@ -216,7 +216,7 @@ func Get(c *Clippan, args []string) error {
 	id := args[1]
 	var doc interface{}
 
-	found, err := bench.GetOr404(c.database, id, &doc)
+	found, err := helpers.GetOr404(c.database, id, &doc)
 	if err != nil {
 		return err // wrap?
 	}
@@ -281,7 +281,7 @@ func AllDocs(c *Clippan, args []string) error {
 // if not found, or any other error encountered
 func GetDocRaw(c *Clippan, id string) ([]byte, map[string]interface{}, error) {
 	var doc map[string]interface{}
-	found, err := bench.GetOr404(c.database, id, &doc)
+	found, err := helpers.GetOr404(c.database, id, &doc)
 	if err != nil {
 		return nil, nil, err
 	}

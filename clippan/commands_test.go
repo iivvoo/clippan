@@ -4,14 +4,14 @@ import (
 	"context"
 	"testing"
 
-	"github.com/iivvoo/clippan/bench"
+	"github.com/iivvoo/clippan/helpers"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestCommands(t *testing.T) {
-	DB := bench.DBSession("test-commands")
+	DB := helpers.DBSession("test-commands")
 
-	t.Run("Test `use` (success)", DB(func(cdb *bench.CouchDB, t *testing.T) {
+	t.Run("Test `use` (success)", DB(func(cdb *helpers.CouchDB, t *testing.T) {
 		assert := assert.New(t)
 
 		printer := &TestPrinter{}
@@ -28,7 +28,7 @@ func TestCommands(t *testing.T) {
 		c.Executer("use " + testDB)
 		assert.Len(printer.Errors, 0)
 	}))
-	t.Run("Test `use` (fail)", DB(func(cdb *bench.CouchDB, t *testing.T) {
+	t.Run("Test `use` (fail)", DB(func(cdb *helpers.CouchDB, t *testing.T) {
 		assert := assert.New(t)
 
 		printer := &TestPrinter{}
@@ -42,9 +42,9 @@ func TestCommands(t *testing.T) {
 }
 
 func TestEditPut(t *testing.T) {
-	DB := bench.DBSession("test-edit-put")
+	DB := helpers.DBSession("test-edit-put")
 
-	t.Run("Test normal put/create flow", DB(func(cdb *bench.CouchDB, t *testing.T) {
+	t.Run("Test normal put/create flow", DB(func(cdb *helpers.CouchDB, t *testing.T) {
 		assert := assert.New(t)
 		printer := &TestPrinter{}
 
@@ -63,13 +63,13 @@ func TestEditPut(t *testing.T) {
 
 		var doc map[string]interface{}
 
-		found, err := bench.GetOr404(cdb.GetDB(), "test1", &doc)
+		found, err := helpers.GetOr404(cdb.GetDB(), "test1", &doc)
 		assert.NoError(err)
 		assert.True(found)
 		// standard unmarshalling makes it a float64, not int
 		assert.EqualValues(42, doc["v"].(float64))
 	}))
-	t.Run("Test invalid json put/create flow", DB(func(cdb *bench.CouchDB, t *testing.T) {
+	t.Run("Test invalid json put/create flow", DB(func(cdb *helpers.CouchDB, t *testing.T) {
 		assert := assert.New(t)
 		printer := &TestPrinter{}
 
@@ -90,12 +90,12 @@ func TestEditPut(t *testing.T) {
 
 		var doc map[string]interface{}
 
-		found, err := bench.GetOr404(cdb.GetDB(), "test1", &doc)
+		found, err := helpers.GetOr404(cdb.GetDB(), "test1", &doc)
 		assert.NoError(err)
 		assert.False(found)
 	}))
 
-	t.Run("Test normal edit flow", DB(func(cdb *bench.CouchDB, t *testing.T) {
+	t.Run("Test normal edit flow", DB(func(cdb *helpers.CouchDB, t *testing.T) {
 		assert := assert.New(t)
 		printer := &TestPrinter{}
 
@@ -121,14 +121,14 @@ func TestEditPut(t *testing.T) {
 
 		var doc map[string]interface{}
 
-		found, err := bench.GetOr404(cdb.GetDB(), "test1", &doc)
+		found, err := helpers.GetOr404(cdb.GetDB(), "test1", &doc)
 		assert.NoError(err)
 		assert.True(found)
 		// standard unmarshalling makes it a float64, not int
 		assert.EqualValues(43, doc["v"].(float64))
 	}))
 
-	t.Run("Test edit only if exists", DB(func(cdb *bench.CouchDB, t *testing.T) {
+	t.Run("Test edit only if exists", DB(func(cdb *helpers.CouchDB, t *testing.T) {
 		assert := assert.New(t)
 		printer := &TestPrinter{}
 
@@ -149,13 +149,13 @@ func TestEditPut(t *testing.T) {
 
 		var doc map[string]interface{}
 
-		found, err := bench.GetOr404(cdb.GetDB(), "test1", &doc)
+		found, err := helpers.GetOr404(cdb.GetDB(), "test1", &doc)
 		assert.NoError(err)
 		// It should not have been created
 		assert.False(found)
 	}))
 
-	t.Run("Test conflict edit flow", DB(func(cdb *bench.CouchDB, t *testing.T) {
+	t.Run("Test conflict edit flow", DB(func(cdb *helpers.CouchDB, t *testing.T) {
 		assert := assert.New(t)
 		printer := &TestPrinter{}
 
@@ -181,7 +181,7 @@ func TestEditPut(t *testing.T) {
 
 		var doc map[string]interface{}
 
-		found, err := bench.GetOr404(cdb.GetDB(), "test1", &doc)
+		found, err := helpers.GetOr404(cdb.GetDB(), "test1", &doc)
 		assert.NoError(err)
 		assert.True(found)
 		// It shouldn't have changed
@@ -190,7 +190,7 @@ func TestEditPut(t *testing.T) {
 	}))
 
 	// force not yet implemented
-	// t.Run("Test conflict edit flow, force change", DB(func(cdb *bench.CouchDB, t *testing.T) {
+	// t.Run("Test conflict edit flow, force change", DB(func(cdb *helpers.CouchDB, t *testing.T) {
 	// 	assert := assert.New(t)
 	// 	printer := &TestPrinter{}
 	//
@@ -214,7 +214,7 @@ func TestEditPut(t *testing.T) {
 	//
 	// 	var doc map[string]interface{}
 	//
-	// 	found, err := bench.GetOr404(cdb.GetDB(), "test1", &doc)
+	// 	found, err := helpers.GetOr404(cdb.GetDB(), "test1", &doc)
 	// 	assert.NoError(err)
 	// 	assert.True(found)
 	// 	// The rev should differ from what the editor created!
@@ -225,7 +225,7 @@ func TestEditPut(t *testing.T) {
 
 type ConflictEditor struct {
 	id        string
-	cdb       *bench.CouchDB
+	cdb       *helpers.CouchDB
 	revResult string
 	errResult error
 }
@@ -237,10 +237,10 @@ func (c *ConflictEditor) Edit(content []byte) ([]byte, error) {
 }
 
 func TestQuery(t *testing.T) {
-	DB := bench.DBSession("test-query")
+	DB := helpers.DBSession("test-query")
 
 	// Test regular, reduce level 0, reduce level 1
-	setUp := func(cdb *bench.CouchDB, t *testing.T) {
+	setUp := func(cdb *helpers.CouchDB, t *testing.T) {
 		assert := assert.New(t)
 		testview := `{
   "_id": "_design/testview",
@@ -276,7 +276,7 @@ func TestQuery(t *testing.T) {
 		assert.NoError(err)
 	}
 
-	t.Run("Test regular query", DB(func(cdb *bench.CouchDB, t *testing.T) {
+	t.Run("Test regular query", DB(func(cdb *helpers.CouchDB, t *testing.T) {
 		assert := assert.New(t)
 		printer := &TestPrinter{}
 
@@ -307,7 +307,7 @@ func TestQuery(t *testing.T) {
 		assert.EqualValues(123, res[1].Value.(float64))
 		assert.EqualValues("John_Doe", res[1].Key.([]interface{})[0].(string))
 	}))
-	t.Run("Test reduce query", DB(func(cdb *bench.CouchDB, t *testing.T) {
+	t.Run("Test reduce query", DB(func(cdb *helpers.CouchDB, t *testing.T) {
 		assert := assert.New(t)
 		printer := &TestPrinter{}
 
@@ -334,7 +334,7 @@ func TestQuery(t *testing.T) {
 		assert.Nil(res[0].Key)
 		assert.EqualValues(145, res[0].Value.(float64))
 	}))
-	t.Run("Test reduce query, level 0", DB(func(cdb *bench.CouchDB, t *testing.T) {
+	t.Run("Test reduce query, level 0", DB(func(cdb *helpers.CouchDB, t *testing.T) {
 		// same as not specifying a level at all
 		assert := assert.New(t)
 		printer := &TestPrinter{}
@@ -362,7 +362,7 @@ func TestQuery(t *testing.T) {
 		assert.Nil(res[0].Key)
 		assert.EqualValues(145, res[0].Value.(float64))
 	}))
-	t.Run("Test reduce query, level 0", DB(func(cdb *bench.CouchDB, t *testing.T) {
+	t.Run("Test reduce query, level 0", DB(func(cdb *helpers.CouchDB, t *testing.T) {
 		// same as not specifying a level at all
 		assert := assert.New(t)
 		printer := &TestPrinter{}
