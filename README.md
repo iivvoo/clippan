@@ -30,11 +30,14 @@ in those databases and query views.
 ## Invocation
 
 clippan <dsn> [-c string] [-write]
+
 `<dsn>` - a full couchdb url optionally including a database, e.g. `http://admin:admin@localhost:5984/mydb`
+
 `-c string` - execute a sequence of `;`-separated commands, e.g `-c "use foo;query -json a b"`
+
 `-write` - start clippan in write mode (read-only is default). Write mode allows creation/deletion of databases and documents
 
 # Thanks
 
-Clippan is powered by [kivik](https://github.com/go-kivik/kivik](kivik), an excellent go/couchdb interface, which also inspired the name Clippan (klippan is, like kivik, an Ikea couch)
+Clippan is powered by [kivik](https://github.com/go-kivik/kivik), an excellent go/couchdb interface, which also inspired the name Clippan (klippan is, like kivik, an Ikea couch)
 
