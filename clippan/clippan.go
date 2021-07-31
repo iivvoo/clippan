@@ -18,14 +18,18 @@ type Printer interface {
 	Print(string, ...interface{})
 	JSON([]byte)
 }
-type TextPrinter struct{}
+type TextPrinter struct {
+	debug bool
+}
 
 func (p *TextPrinter) Error(format string, args ...interface{}) {
 	fmt.Printf("ERROR: "+format+"\n", args...)
 }
 
 func (p *TextPrinter) Debug(format string, args ...interface{}) {
-	fmt.Printf("DEBUG: "+format+"\n", args...)
+	if p.debug {
+		fmt.Printf("DEBUG: "+format+"\n", args...)
+	}
 }
 
 func (p *TextPrinter) Print(format string, args ...interface{}) {
@@ -54,7 +58,7 @@ type Clippan struct {
 	db          string // database.Name() ??
 }
 
-func NewClippan(dsn string, enableWrite bool) *Clippan {
+func NewClippan(dsn string, enableWrite, debug bool) *Clippan {
 	u, err := url.Parse(dsn)
 	if err != nil {
 		panic(err)
@@ -72,7 +76,7 @@ func NewClippan(dsn string, enableWrite bool) *Clippan {
 		enableWrite: enableWrite,
 		host:        u.Host,
 		Prompt:      p,
-		Printer:     &TextPrinter{},
+		Printer:     &TextPrinter{debug},
 		Editor:      editor,
 	}
 }

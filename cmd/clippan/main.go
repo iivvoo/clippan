@@ -30,9 +30,11 @@ func NormalizeDSN(base string) (*url.URL, error) {
 func main() {
 	flags := flag.NewFlagSet(os.Args[0], flag.ExitOnError)
 	writeEnabled := false
+	debugEnabled := false
 	cmd := ""
 
 	flags.BoolVar(&writeEnabled, "write", false, "Allow write operations")
+	flags.BoolVar(&debugEnabled, "debug", false, "Enable debugging, prints lots of stuff")
 	flags.StringVar(&cmd, "c", "", "Execute ;-separated commands")
 	if err := flags.Parse(os.Args[1:]); err != nil {
 		panic(err)
@@ -46,6 +48,6 @@ func main() {
 		panic(err)
 	}
 
-	c := clippan.NewClippan(dsnNormalized.String(), writeEnabled)
+	c := clippan.NewClippan(dsnNormalized.String(), writeEnabled, debugEnabled)
 	c.Run(cmd)
 }
