@@ -1,0 +1,28 @@
+name: Release
+on: 
+  release:
+    types: [created]
+
+jobs:
+  releases-matrix:
+    name: Release Go Binary
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        # windows not supported due to go-prompt rependency
+        goos: [linux, darwin]
+        goarch: ["386", amd64, arm64]
+        exclude:  
+          - goarch: "386"
+            goos: darwin 
+          - goarch: arm64
+            goos: windows
+    steps:
+    - uses: actions/checkout@v2
+    - uses: wangyoucao577/go-release-action@v1.19
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        goos: ${{ matrix.goos }}
+        goarch: ${{ matrix.goarch }}
+        build_command: make build-release
+        binary_name: clippan-release

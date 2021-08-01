@@ -5,6 +5,7 @@ GIT_REVISION=$(shell git rev-parse --short HEAD)
 GIT_BRANCH=$(shell git rev-parse --symbolic-full-name --abbrev-ref HEAD)
 GIT_DIRTY=$(shell git diff-index --quiet HEAD -- || echo "x-")
 
+# Optionally include RELEASE_TAG, set by github when building
 LDFLAGS=-ldflags "-s -X main.BuildStamp=$(BUILD_TIME) -X main.GitHash=$(GIT_DIRTY)$(GIT_REVISION) -X main.gitBranch=$(GIT_BRANCH)"
 
 
@@ -16,6 +17,9 @@ default: bin/clippan
 
 bin/clippan: $(srcfiles)
 	go build -o bin/clippan $(LDFLAGS) cmd/clippan/main.go
+
+build-release: $(srcfiles)
+	go build -o clippan-release $(LDFLAGS) cmd/clippan/main.go
 
 lint:
 	golangci-lint run
