@@ -25,4 +25,3 @@ jobs:
         goarch: ${{ matrix.goarch }}
         build_command: make build-release
         binary_name: clippan-release
-        github_token: ${{ secrets.GITHUB_TOKEN }}
