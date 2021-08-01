@@ -41,8 +41,8 @@ var Commands []*Command
 
 func init() {
 	Commands = []*Command{
+		{"use", "Connect to a database (takes just a database name or a full dsn)", false, NeedConnection, UseDB},
 		{"databases", "List all databases", false, NeedConnection, Databases},
-		{"use", "Connect to a database", false, NeedConnection, UseDB},
 		{"createdb", "Create a database", true, NeedConnection, CreateDB},
 		{"deletedb", "Delete a database", true, NeedConnection, DeleteDB},
 		{"all", "List all docs, paginated", false, NeedDatabase, AllDocs},
