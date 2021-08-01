@@ -17,6 +17,9 @@ default: bin/clippan
 bin/clippan: $(srcfiles)
 	go build -o bin/clippan $(LDFLAGS) cmd/clippan/main.go
 
+build-release: $(srcfiles)
+	go build -o clippan-release $(LDFLAGS) cmd/clippan/main.go
+
 lint:
 	golangci-lint run
 
