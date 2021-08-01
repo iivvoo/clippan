@@ -33,6 +33,8 @@ With a recent Go install (>=1.13.x), `make` will build a clippan binary in bin/
 
 There are several pre-compiled releases available in the releases section
 
+Windows is currently not supported because of the dependency on go-prompt, which is not available for windows.
+
 ## Invocation
 
 clippan <dsn> [-c string] [-write]
