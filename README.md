@@ -31,7 +31,7 @@ in those databases and query views.
 
 With a recent Go install (>=1.13.x), `make` will build a clippan binary in bin/
 
-There are currently no pre-built binaries available yet.
+There are several pre-compiled releases available in the releases section
 
 ## Invocation
 
