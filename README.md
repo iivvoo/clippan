@@ -27,6 +27,12 @@ help                  Show help
 Effectively, you can create, delete, access databases, create, access and delete documents
 in those databases and query views.
 
+## Building, installing
+
+With a recent Go install (>=1.13.x), `make` will build a clippan binary in bin/
+
+There are currently no pre-built binaries available yet.
+
 ## Invocation
 
 clippan <dsn> [-c string] [-write]
