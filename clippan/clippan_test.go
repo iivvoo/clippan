@@ -104,7 +104,7 @@ func TestRun(t *testing.T) {
 
 		assert.Len(p.Errors, 2)
 		assert.Len(p.Debugs, 2)
-		assert.Equal("xCommand: []string{\"a\"}\n", p.Debugs[0])
+		assert.Equal("Command: []string{\"a\"}\n", p.Debugs[0])
 		assert.Equal("Command: []string{\"b\", \"-c\"}\n", p.Debugs[1])
 	}))
 
