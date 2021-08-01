@@ -10,7 +10,8 @@ jobs:
     - uses: actions/checkout@v2
     - uses: wangyoucao577/go-release-action@v1.19
       with:
-        build_flags: cmd/clippan/main.go
+        build_command: make
+        binary_name: bin/clippan
         github_token: ${{ secrets.GITHUB_TOKEN }}
         goos: linux
         goarch: amd64
