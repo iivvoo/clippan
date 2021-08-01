@@ -11,6 +11,7 @@ jobs:
     - uses: wangyoucao577/go-release-action@v1.19
       with:
         build_command: make
+        pre_command: mkdir bin
         binary_name: bin/clippan
         github_token: ${{ secrets.GITHUB_TOKEN }}
         goos: linux
