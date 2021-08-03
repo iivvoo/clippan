@@ -129,7 +129,7 @@ func TestEditPut(t *testing.T) {
 		assert.EqualValues(43, doc["v"].(float64))
 	}))
 
-	t.Run("Test -pretty edit flow", DB(func(cdb *helpers.CouchDB, t *testing.T) {
+	t.Run("Test edit flow - assert prettifying", DB(func(cdb *helpers.CouchDB, t *testing.T) {
 		assert := assert.New(t)
 		printer := &TestPrinter{}
 
