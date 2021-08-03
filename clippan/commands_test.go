@@ -2,6 +2,7 @@ package clippan
 
 import (
 	"context"
+	"strings"
 	"testing"
 
 	"github.com/iivvoo/clippan/helpers"
@@ -126,6 +127,37 @@ func TestEditPut(t *testing.T) {
 		assert.True(found)
 		// standard unmarshalling makes it a float64, not int
 		assert.EqualValues(43, doc["v"].(float64))
+	}))
+
+	t.Run("Test edit flow - assert prettifying", DB(func(cdb *helpers.CouchDB, t *testing.T) {
+		assert := assert.New(t)
+		printer := &TestPrinter{}
+
+		json := []byte(`{"_id":"test1", "v":42}`)
+
+		rev, err := cdb.DB().Put(context.TODO(), "test1", json)
+		assert.NoError(err)
+
+		// It should exist now, let's update
+		json = []byte(`{"_id":\n"test1", "_rev": "` + rev + `", "v":43}`)
+
+		editor := NewMockEditor()
+		editor.SetMockData(json, nil)
+		c := NewTestClippan(cdb,
+			true,
+			printer,
+			editor,
+			NewMockPrompt().SetMockData("a"),
+		)
+
+		// Activate the testing database
+		c.Executer("use " + cdb.DB().Name())
+		c.Executer("edit test1")
+		assert.Len(printer.Errors, 0)
+
+		received := editor.GetReceived()
+		// What's received should have some newlines
+		assert.True(strings.Count(string(received), "\n") > 3)
 	}))
 
 	t.Run("Test edit only if exists", DB(func(cdb *helpers.CouchDB, t *testing.T) {

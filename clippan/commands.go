@@ -13,6 +13,7 @@ import (
 	"github.com/go-kivik/kivik/v4"
 	"github.com/gobwas/glob"
 	"github.com/iivvoo/clippan/helpers"
+	"github.com/tidwall/pretty"
 )
 
 type Flag uint8
@@ -41,8 +42,8 @@ var Commands []*Command
 
 func init() {
 	Commands = []*Command{
+		{"use", "Connect to a database (takes just a database name or a full dsn)", false, NeedConnection, UseDB},
 		{"databases", "List all databases", false, NeedConnection, Databases},
-		{"use", "Connect to a database", false, NeedConnection, UseDB},
 		{"createdb", "Create a database", true, NeedConnection, CreateDB},
 		{"deletedb", "Delete a database", true, NeedConnection, DeleteDB},
 		{"all", "List all docs, paginated", false, NeedDatabase, AllDocs},
@@ -302,12 +303,19 @@ func EditPut(c *Clippan, args []string, onlyEdit bool) error {
 		c.Error("Not connected to a database")
 		return NoDatabaseError
 	}
-	if len(args) != 2 {
+	fs := flag.NewFlagSet(args[0], flag.ContinueOnError)
+
+	if fs.Parse(args[1:]) != nil {
+		return nil // help will have been printed
+	}
+	if fs.NArg() != 1 {
 		return UsageError
 	}
-	id := args[1]
+	id := fs.Arg(0)
 
 	data, _, err := GetDocRaw(c, id)
+	// There's no reason not to make it pretty. Fauxton does it as well
+	data = pretty.Pretty(data)
 
 	if err != nil && err != DocumentNotFoundError {
 		return err
@@ -370,7 +378,6 @@ func EditPut(c *Clippan, args []string, onlyEdit bool) error {
 		} else {
 			// notify user of error so they can perhaps fix issue or retry
 			return err
-
 		}
 	}
 	return nil

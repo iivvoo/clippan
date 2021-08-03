@@ -11,8 +11,8 @@ The current shell commands may change and most commands are still very minimal w
 ## Available commands
 
 ```
+use                   Connect to a database (takes just a database name or full dsn)
 databases             List all databases 
-use                   Connect to a database 
 createdb              Create a database (disabled, ro mode)
 deletedb              Delete a database (disabled, ro mode)
 all                   List all docs, paginated 
@@ -37,7 +37,7 @@ Windows is currently not supported because of the dependency on go-prompt, which
 
 ## Invocation
 
-clippan <dsn> [-c string] [-write]
+`clippan <dsn> [-c string] [-write]`
 
 `<dsn>` - a full couchdb url optionally including a database, e.g. `http://admin:admin@localhost:5984/mydb`
 
