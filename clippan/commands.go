@@ -13,6 +13,7 @@ import (
 	"github.com/go-kivik/kivik/v4"
 	"github.com/gobwas/glob"
 	"github.com/iivvoo/clippan/helpers"
+	"github.com/tidwall/pretty"
 )
 
 type Flag uint8
@@ -302,12 +303,22 @@ func EditPut(c *Clippan, args []string, onlyEdit bool) error {
 		c.Error("Not connected to a database")
 		return NoDatabaseError
 	}
-	if len(args) != 2 {
+	fs := flag.NewFlagSet(args[0], flag.ContinueOnError)
+
+	makePretty := false
+	fs.BoolVar(&makePretty, "pretty", false, "Format json before/after edit")
+	if fs.Parse(args[1:]) != nil {
+		return nil // help will have been printed
+	}
+	if fs.NArg() != 1 {
 		return UsageError
 	}
-	id := args[1]
+	id := fs.Arg(0)
 
 	data, _, err := GetDocRaw(c, id)
+	if makePretty {
+		data = pretty.Pretty(data)
+	}
 
 	if err != nil && err != DocumentNotFoundError {
 		return err
@@ -339,6 +350,9 @@ func EditPut(c *Clippan, args []string, onlyEdit bool) error {
 			continue // try again
 		}
 
+		if makePretty {
+			data = pretty.Pretty(data)
+		}
 		rev, err := c.database.Put(context.TODO(), id, data)
 		// Check if conflict, suggest solutions such as
 		// - replace
