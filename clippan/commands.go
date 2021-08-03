@@ -350,9 +350,6 @@ func EditPut(c *Clippan, args []string, onlyEdit bool) error {
 			continue // try again
 		}
 
-		if makePretty {
-			data = pretty.Pretty(data)
-		}
 		rev, err := c.database.Put(context.TODO(), id, data)
 		// Check if conflict, suggest solutions such as
 		// - replace
@@ -384,7 +381,6 @@ func EditPut(c *Clippan, args []string, onlyEdit bool) error {
 		} else {
 			// notify user of error so they can perhaps fix issue or retry
 			return err
-
 		}
 	}
 	return nil

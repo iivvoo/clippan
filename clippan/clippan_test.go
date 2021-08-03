@@ -29,8 +29,9 @@ func (t *TestPrinter) JSON(raw []byte) {
 }
 
 type MockEditor struct {
-	result []byte
-	err    error
+	received []byte
+	result   []byte
+	err      error
 }
 
 func NewMockEditor() *MockEditor {
@@ -43,7 +44,12 @@ func (m *MockEditor) SetMockData(result []byte, err error) *MockEditor {
 }
 
 func (m *MockEditor) Edit(content []byte) ([]byte, error) {
+	m.received = content
 	return m.result, m.err
+}
+
+func (m *MockEditor) GetReceived() []byte {
+	return m.received
 }
 
 type MockPrompt struct {
