@@ -305,8 +305,6 @@ func EditPut(c *Clippan, args []string, onlyEdit bool) error {
 	}
 	fs := flag.NewFlagSet(args[0], flag.ContinueOnError)
 
-	makePretty := false
-	fs.BoolVar(&makePretty, "pretty", false, "Format json before/after edit")
 	if fs.Parse(args[1:]) != nil {
 		return nil // help will have been printed
 	}
@@ -316,9 +314,8 @@ func EditPut(c *Clippan, args []string, onlyEdit bool) error {
 	id := fs.Arg(0)
 
 	data, _, err := GetDocRaw(c, id)
-	if makePretty {
-		data = pretty.Pretty(data)
-	}
+	// There's no reason not to make it pretty. Fauxton does it as well
+	data = pretty.Pretty(data)
 
 	if err != nil && err != DocumentNotFoundError {
 		return err

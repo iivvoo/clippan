@@ -152,7 +152,7 @@ func TestEditPut(t *testing.T) {
 
 		// Activate the testing database
 		c.Executer("use " + cdb.DB().Name())
-		c.Executer("edit -pretty test1")
+		c.Executer("edit test1")
 		assert.Len(printer.Errors, 0)
 
 		received := editor.GetReceived()
