@@ -10,7 +10,7 @@ type Prompt struct {
 	_executer func(string)
 }
 
-func NewPrompt() *Prompt {
+func NewPrompt(history ...string) *Prompt {
 	p := &Prompt{
 		prompt:    nil,
 		ps:        "",
@@ -19,6 +19,7 @@ func NewPrompt() *Prompt {
 	p.prompt = prompt.New(p.executer, p.completer,
 		prompt.OptionPrefix(">"),
 		prompt.OptionLivePrefix(p.livePrefix),
+		prompt.OptionHistory(history),
 	)
 	return p
 }

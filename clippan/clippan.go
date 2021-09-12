@@ -68,14 +68,14 @@ func NewClippan(dsn string, enableWrite, debug bool) *Clippan {
 	dsn = u.String()
 
 	editor := NewRealEditor("/usr/bin/nvim")
-	p := NewPrompt()
+	// p := NewPrompt()
 	return &Clippan{
 		dsn:         dsn,
 		db:          database,
 		client:      nil,
 		enableWrite: enableWrite,
 		host:        u.Host,
-		Prompt:      p,
+		Prompt:      nil,
 		Printer:     &TextPrinter{debug},
 		Editor:      editor,
 	}
@@ -164,11 +164,23 @@ func (c *Clippan) UseDB(db string) bool {
 	return true
 }
 
-func (c *Clippan) RunCmds(cmds string) {
+// splitCmds splits ;-separated command line supplied commands into individual commands
+func (c *Clippan) splitCmds(cmds string) []string {
+	split := []string{}
 	if cmds != "" {
 		for _, cmd := range strings.Split(cmds, ";") {
-			c.Executer(cmd)
+			if strings.TrimSpace(cmd) != "" {
+				split = append(split, cmd)
+			}
 		}
+	}
+	return split
+}
+
+// RunCmds runs all individual commands in `cmds`
+func (c *Clippan) RunCmds(cmds []string) {
+	for _, cmd := range cmds {
+		c.Executer(cmd)
 	}
 }
 
@@ -181,6 +193,12 @@ func (c *Clippan) Run(cmds string) {
 	}
 	c.Print("Connecting to " + fullDSN)
 
+	split := c.splitCmds(cmds)
+	// Initialize prompt with history, if possible
+	if c.Prompt == nil {
+		c.Prompt = NewPrompt(split...)
+	}
+
 	if err := c.Connect(); err != nil {
 		c.Error(err.Error())
 	} else if c.db != "" {
@@ -190,6 +208,6 @@ func (c *Clippan) Run(cmds string) {
 	}
 
 	// if c.database then db = c.client.DB(context.TODO(), c.database)
-	c.RunCmds(cmds)
+	c.RunCmds(split)
 	c.Prompt.GetInput(c.Executer)
 }
