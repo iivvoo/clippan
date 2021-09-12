@@ -20,7 +20,6 @@ func NewPrompt() *Prompt {
 		prompt.OptionPrefix(">"),
 		prompt.OptionLivePrefix(p.livePrefix),
 	)
-	prompt.OptionPrefix("kaas")
 	return p
 }
 
