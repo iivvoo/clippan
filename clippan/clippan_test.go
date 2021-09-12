@@ -71,7 +71,6 @@ func (m *MockPrompt) Input(s string) string {
 	return m.result
 }
 func NewTestClippan(testdb *helpers.CouchDB, enableWrite bool, printer Printer, editor Editor, prompt Prompter) *Clippan {
-	// p := NewPrompt()
 	return &Clippan{
 		dsn:         "",
 		db:          "",
@@ -106,12 +105,21 @@ func TestRun(t *testing.T) {
 		assert := assert.New(t)
 		p := &TestPrinter{}
 		c := NewTestClippan(cdb, false, p, NewMockEditor(), NewMockPrompt())
-		c.RunCmds("a;b -c")
+		c.RunCmds([]string{"a", "b -c"})
 
 		assert.Len(p.Errors, 2)
 		assert.Len(p.Debugs, 2)
 		assert.Equal("Command: []string{\"a\"}\n", p.Debugs[0])
 		assert.Equal("Command: []string{\"b\", \"-c\"}\n", p.Debugs[1])
+	}))
+	t.Run("Test splitCmds", DB(func(cdb *helpers.CouchDB, t *testing.T) {
+		assert := assert.New(t)
+		p := &TestPrinter{}
+		c := NewTestClippan(cdb, false, p, NewMockEditor(), NewMockPrompt())
+		split := c.splitCmds("a;;b -c;")
+
+		assert.Len(split, 2)
+		assert.ElementsMatch([]string{"a", "b -c"}, split)
 	}))
 
 }
