@@ -1,6 +1,6 @@
 module github.com/iivvoo/clippan
 
-go 1.14
+go 1.18
 
 require (
 	github.com/c-bata/go-prompt v0.2.3
