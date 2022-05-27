@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"flag"
+	"fmt"
 	"net/http"
 	"os"
 	"strings"
@@ -416,11 +417,19 @@ func Query(c *Clippan, args []string) error {
 	 */
 	var reduce, useJson bool
 	var level int
+	var limit int
 
 	fs := flag.NewFlagSet(args[0], flag.ContinueOnError)
+
+	fs.Usage = func() {
+		fmt.Fprintf(os.Stderr, "Usage: query [flags] design-doc view.\n")
+		fmt.Fprintf(os.Stderr, "e.g. to query _design/employee _view/by-age, run `query employee by-age`\n")
+		fs.PrintDefaults()
+	}
 	fs.BoolVar(&reduce, "reduce", false, "Reduce query")
 	fs.IntVar(&level, "level", 0, "Reduce group level")
 	fs.BoolVar(&useJson, "json", false, "Output json")
+	fs.IntVar(&limit, "limit", 50, "Max amount of entries to show")
 	if fs.Parse(args[1:]) != nil {
 		return nil // help will have been printed
 	}
@@ -438,7 +447,7 @@ func Query(c *Clippan, args []string) error {
 		// "endkey":       endKey,
 		// "include_docs": true,
 		"skip":   0,
-		"limit":  50,
+		"limit":  limit,
 		"reduce": false,
 	}
 
@@ -474,10 +483,13 @@ func Query(c *Clippan, args []string) error {
 		c.JSON(MustMarshal(result))
 	} else {
 		c.Print("%20v %20v %20s", "Key", "Value", "doc ID")
+		count := 0
 		for _, r := range result {
 
-			c.Print("%20v %20v %20s", r.Key, r.Value, r.ID)
+			c.Print("%-30v %20v %20s", r.Key, r.Value, r.ID)
+			count += 1
 		}
+		c.Print("\n%d results shown", count)
 	}
 
 	return nil

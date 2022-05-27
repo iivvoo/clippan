@@ -339,6 +339,34 @@ func TestQuery(t *testing.T) {
 		assert.EqualValues(123, res[1].Value.(float64))
 		assert.EqualValues("John_Doe", res[1].Key.([]interface{})[0].(string))
 	}))
+	t.Run("Test regular query, with limit", DB(func(cdb *helpers.CouchDB, t *testing.T) {
+		assert := assert.New(t)
+		printer := &TestPrinter{}
+
+		setUp(cdb, t)
+		json := []byte(`{"_id":"test1", "v":42}`)
+		c := NewTestClippan(cdb,
+			true,
+			printer,
+			NewMockEditor().SetMockData(json, nil),
+			NewMockPrompt().SetMockData("a"),
+		)
+
+		// Activate the testing database
+		c.Executer("use " + cdb.DB().Name())
+		c.Executer("query -json -limit 1 testview v1")
+		assert.Len(printer.Errors, 0)
+		assert.Len(printer.JSONS, 1)
+
+		var res []*QueryResult
+		MustUnmarshal(printer.JSONS[0], &res)
+
+		assert.Len(res, 1)
+		// Jane comes before John. These assertions make some assumptions about structure and type
+		assert.Equal("entry2", res[0].ID)
+		assert.EqualValues(22, res[0].Value.(float64))
+		assert.EqualValues("Jane_Doe", res[0].Key.([]interface{})[0].(string))
+	}))
 	t.Run("Test reduce query", DB(func(cdb *helpers.CouchDB, t *testing.T) {
 		assert := assert.New(t)
 		printer := &TestPrinter{}
