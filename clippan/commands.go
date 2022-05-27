@@ -483,10 +483,13 @@ func Query(c *Clippan, args []string) error {
 		c.JSON(MustMarshal(result))
 	} else {
 		c.Print("%20v %20v %20s", "Key", "Value", "doc ID")
+		count := 0
 		for _, r := range result {
 
-			c.Print("%20v %20v %20s", r.Key, r.Value, r.ID)
+			c.Print("%-30v %20v %20s", r.Key, r.Value, r.ID)
+			count += 1
 		}
+		c.Print("\n%d results shown", count)
 	}
 
 	return nil
