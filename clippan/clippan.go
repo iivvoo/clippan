@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/url"
+	"os"
 	"strings"
 
 	_ "github.com/go-kivik/couchdb/v4"
@@ -67,7 +68,11 @@ func NewClippan(dsn string, enableWrite, debug bool) *Clippan {
 	u.Path = ""
 	dsn = u.String()
 
-	editor := NewRealEditor("/usr/bin/nvim")
+	editBin := os.Getenv("EDITOR")
+	if editBin == "" {
+		editBin = "/usr/bin/vi"
+	}
+	editor := NewRealEditor(editBin)
 	// p := NewPrompt()
 	return &Clippan{
 		dsn:         dsn,
