@@ -32,16 +32,16 @@ func ValidateUnmarshal(data []byte, v interface{}) error {
 		scanner := bufio.NewScanner(bytes.NewReader(data))
 		var line int
 		var readBytes int64
-		var rowBytes int64
+		var rowOffset int64
 		for scanner.Scan() {
 			// +1 for the \n character
+			rowOffset = readBytes
 			readBytes += int64(len(scanner.Bytes()) + 1)
 			line += 1
 			if readBytes >= err.Offset {
 				fmt.Printf("Error in input syntax on line %d: %s\n", line, err.Error())
-				return &ValidationError{Offset: err.Offset, Line: line, Col: int(err.Offset - rowBytes), Err: err}
+				return &ValidationError{Offset: err.Offset, Line: line, Col: int(err.Offset - rowOffset), Err: err}
 			}
-			rowBytes += readBytes
 		}
 		// We somehow couldn't find the position, just provide Col as offset on line 0
 		return &ValidationError{Offset: err.Offset, Line: 0, Col: int(err.Offset), Err: err}
