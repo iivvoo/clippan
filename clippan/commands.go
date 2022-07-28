@@ -298,6 +298,18 @@ func GetDocRaw(c *Clippan, id string) ([]byte, map[string]interface{}, error) {
 	return data, doc, nil
 }
 
+var docTpl = `{"_id": %s"}`
+var designDocTpl = `{
+  "_id": "%s",
+  "language": "javascript",
+  "views": {
+    "view": {
+      "map": "function (doc) {\n  emit(doc._id, 1);\n}",
+      "reduce": "_sum"
+    }
+  }
+}`
+
 // Put craetes a new document
 func EditPut(c *Clippan, args []string, onlyEdit bool) error {
 	if c.database == nil {
@@ -322,7 +334,10 @@ func EditPut(c *Clippan, args []string, onlyEdit bool) error {
 		return err
 	}
 	if err == DocumentNotFoundError {
-		data = []byte(`{"_id": "` + id + `"}`)
+		data = []byte(fmt.Sprintf(docTpl, id))
+		if strings.HasPrefix(id, "_design/") {
+			data = []byte(fmt.Sprintf(designDocTpl, id))
+		}
 		if onlyEdit {
 			return DocumentNotFoundError
 		}
@@ -341,6 +356,7 @@ func EditPut(c *Clippan, args []string, onlyEdit bool) error {
 		}
 		if err = ValidateJSON(data); err != nil {
 			in := c.Prompt.Input("Document does not validate as json. (E)dit again or (A)bort?> ")
+			c.Print("%v", err)
 			in = strings.ToLower(in)
 			if in == "a" {
 				return nil
