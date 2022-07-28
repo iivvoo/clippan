@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"strings"
 )
 
 // Validate json, return line, column of any issue + type of error
@@ -55,5 +56,26 @@ func ValidateUnmarshal(data []byte, v interface{}) error {
 	return nil
 }
 
-// Given an parse error result, provide textual context: the line with the error (possibly allow annotation)
-func AnnotateError() {}
+// Given the ValidationError, produce an error message with context, as a slice of strings
+// the returned int will indicated the index of the error itself
+func AnnotateError(data []byte, issue *ValidationError, before, after int) ([]string, int) {
+	context := make([]string, 0)
+	scanner := bufio.NewScanner(bytes.NewReader(data))
+	index := 0
+	messagePos := 0
+
+	for scanner.Scan() {
+		index += 1
+		if index >= issue.Line-before && index <= issue.Line+after {
+			line := string(scanner.Bytes())
+			context = append(context, line)
+
+			if index == issue.Line {
+				message := strings.Repeat(" ", issue.Col-1) + "^-" + issue.Err.Error()
+				context = append(context, message)
+				messagePos = len(context)
+			}
+		}
+	}
+	return context, messagePos
+}
