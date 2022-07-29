@@ -73,7 +73,7 @@ func AnnotateError(data []byte, issue *ValidationError, before, after int) ([]st
 			if index == issue.Line {
 				message := strings.Repeat(" ", issue.Col-1) + "^-" + issue.Err.Error()
 				context = append(context, message)
-				messagePos = len(context)
+				messagePos = len(context) - 1
 			}
 		}
 	}

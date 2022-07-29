@@ -106,9 +106,8 @@ func TestAnnotate(t *testing.T) {
       "bb": 6
     }
   ]
-}
-`)
-	t.Run("In the middle", func(t *testing.T) {
+}`)
+	t.Run("In the middle, 1 line context both sides", func(t *testing.T) {
 		assert := assert.New(t)
 		ve := &ValidationError{
 			Line: 5,
@@ -118,11 +117,78 @@ func TestAnnotate(t *testing.T) {
 		res, idx := AnnotateError(code, ve, 1, 1)
 
 		// The line with error, 1 line context before, message after, context after
-		assert.Equal(3, idx)
+		assert.Equal(2, idx)
 		assert.Len(res, 4)
 		assert.Equal(`      "aa": 1,`, res[0])
 		assert.Equal(`      "bb": 2`, res[1])
 		assert.Equal("       ^-Wrong!", res[2])
 		assert.Equal(`    },`, res[3])
+	})
+	t.Run("In the middle, no context", func(t *testing.T) {
+		assert := assert.New(t)
+		ve := &ValidationError{
+			Line: 5,
+			Col:  8,
+			Err:  errors.New("Wrong!"),
+		}
+		res, idx := AnnotateError(code, ve, 0, 0)
+
+		// The line with error, 1 line context before, message after, context after
+		assert.Equal(1, idx)
+		assert.Len(res, 2)
+		assert.Equal(`      "bb": 2`, res[0])
+		assert.Equal("       ^-Wrong!", res[1])
+	})
+	t.Run("In the middle, 2 above 3 below context", func(t *testing.T) {
+		assert := assert.New(t)
+		ve := &ValidationError{
+			Line: 5,
+			Col:  13,
+			Err:  errors.New("Wrong!"),
+		}
+		res, idx := AnnotateError(code, ve, 2, 3)
+
+		// The line with error, 1 line context before, message after, context after
+		assert.Equal(3, idx)
+		assert.Len(res, 7)
+		assert.Equal(`    {`, res[0])
+		assert.Equal(`      "aa": 1,`, res[1])
+		assert.Equal(`      "bb": 2`, res[2])
+		assert.Equal("            ^-Wrong!", res[3])
+		assert.Equal(`    },`, res[4])
+		assert.Equal(`    {`, res[5])
+		assert.Equal(`      "aa": 3,`, res[6])
+	})
+	t.Run("First row", func(t *testing.T) {
+		assert := assert.New(t)
+		ve := &ValidationError{
+			Line: 1,
+			Col:  1,
+			Err:  errors.New("Wrong!"),
+		}
+		res, idx := AnnotateError(code, ve, 1, 1)
+
+		// The line with error, 1 line context before, message after, context after
+		assert.Equal(1, idx)
+		assert.Len(res, 3)
+		assert.Equal(`{`, res[0])
+		assert.Equal("^-Wrong!", res[1])
+		assert.Equal(`"results": [`, res[2])
+	})
+	t.Run("Last row", func(t *testing.T) {
+		assert := assert.New(t)
+		ve := &ValidationError{
+			Line: 16,
+			Col:  1,
+			Err:  errors.New("Wrong!"),
+		}
+		res, idx := AnnotateError(code, ve, 1, 1)
+
+		// The line with error, 1 line context before, message after, context after
+		assert.Equal(2, idx)
+		assert.Len(res, 3)
+		assert.Equal(`  ]`, res[0])
+		assert.Equal(`}`, res[1])
+		assert.Equal("^-Wrong!", res[2])
 	})
 }
