@@ -23,29 +23,25 @@ func (v *ValidationError) Error() string {
 }
 
 func ValidateUnmarshal(data []byte, v interface{}) error {
-	err := json.Unmarshal(data, v)
-	if err == nil {
+	if err := json.Unmarshal(data, v); err == nil {
 		return nil
-	}
-	switch err := err.(type) {
-	case *json.SyntaxError:
+	} else if err, m := err.(*json.SyntaxError); m {
 		scanner := bufio.NewScanner(bytes.NewReader(data))
 		var line int
-		var readBytes int64
+		var bytesRead int64
 		var rowOffset int64
 		for scanner.Scan() {
 			// +1 for the \n character
-			rowOffset = readBytes
-			readBytes += int64(len(scanner.Bytes()) + 1)
+			rowOffset = bytesRead
+			bytesRead += int64(len(scanner.Bytes()) + 1)
 			line += 1
-			if readBytes >= err.Offset {
+			if bytesRead >= err.Offset {
 				return &ValidationError{Offset: err.Offset, Line: line, Col: int(err.Offset - rowOffset), Err: err}
 			}
 		}
 		// We somehow couldn't find the position, just provide Col as offset on line 0
 		return &ValidationError{Offset: err.Offset, Line: 0, Col: int(err.Offset), Err: err}
-
-	default:
+	} else {
 		// line and col 0 are not valid positions, so they can indicate lack of one
 		return &ValidationError{Line: 0, Col: 0, Err: err}
 	}
