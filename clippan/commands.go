@@ -14,6 +14,7 @@ import (
 	"github.com/go-kivik/kivik/v4"
 	"github.com/gobwas/glob"
 	"github.com/iivvoo/clippan/helpers"
+	vjson "github.com/iivvoo/clippan/json"
 	"github.com/tidwall/pretty"
 )
 
@@ -354,9 +355,20 @@ func EditPut(c *Clippan, args []string, onlyEdit bool) error {
 		if err != nil {
 			return err
 		}
-		if err = ValidateJSON(data); err != nil {
+		// we don't care about the marshalled data
+		var dummy interface{}
+		if err = vjson.ValidateUnmarshal(data, &dummy); err != nil {
+			ve, match := err.(*vjson.ValidationError)
+			if match {
+				context, _ := vjson.AnnotateError(data, ve, 3, 3)
+				for _, line := range context {
+					c.Print(line)
+				}
+
+			} else {
+				c.Print("%v", err)
+			}
 			in := c.Prompt.Input("Document does not validate as json. (E)dit again or (A)bort?> ")
-			c.Print("%v", err)
 			in = strings.ToLower(in)
 			if in == "a" {
 				return nil
@@ -369,7 +381,7 @@ func EditPut(c *Clippan, args []string, onlyEdit bool) error {
 		// - replace
 		// - merge-edit
 		if err == nil {
-			c.Print(rev)
+			c.Print("Document saved with revision %s", rev)
 			break
 		}
 
@@ -398,11 +410,6 @@ func EditPut(c *Clippan, args []string, onlyEdit bool) error {
 		}
 	}
 	return nil
-}
-
-func ValidateJSON(data []byte) error {
-	var x interface{}
-	return json.Unmarshal(data, &x)
 }
 
 func Edit(c *Clippan, args []string) error {

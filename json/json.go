@@ -29,7 +29,6 @@ func ValidateUnmarshal(data []byte, v interface{}) error {
 	}
 	switch err := err.(type) {
 	case *json.SyntaxError:
-		fmt.Printf("Error in input syntax at byte %d: %s\n", err.Offset, err.Error())
 		scanner := bufio.NewScanner(bytes.NewReader(data))
 		var line int
 		var readBytes int64
@@ -40,7 +39,6 @@ func ValidateUnmarshal(data []byte, v interface{}) error {
 			readBytes += int64(len(scanner.Bytes()) + 1)
 			line += 1
 			if readBytes >= err.Offset {
-				fmt.Printf("Error in input syntax on line %d: %s\n", line, err.Error())
 				return &ValidationError{Offset: err.Offset, Line: line, Col: int(err.Offset - rowOffset), Err: err}
 			}
 		}
@@ -48,8 +46,6 @@ func ValidateUnmarshal(data []byte, v interface{}) error {
 		return &ValidationError{Offset: err.Offset, Line: 0, Col: int(err.Offset), Err: err}
 
 	default:
-		fmt.Println("****", err)
-		fmt.Printf("Other error decoding JSON: %s\n", err.Error())
 		// line and col 0 are not valid positions, so they can indicate lack of one
 		return &ValidationError{Line: 0, Col: 0, Err: err}
 	}
