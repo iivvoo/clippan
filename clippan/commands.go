@@ -299,7 +299,7 @@ func GetDocRaw(c *Clippan, id string) ([]byte, map[string]interface{}, error) {
 	return data, doc, nil
 }
 
-var docTpl = `{"_id": %s"}`
+var docTpl = `{"_id": "%s"}`
 var designDocTpl = `{
   "_id": "%s",
   "language": "javascript",
